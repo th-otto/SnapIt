@@ -1,4 +1,4 @@
-#include <gem.h>
+ #include <gem.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -422,6 +422,11 @@ static _BOOL next_snap_num(void)
 	strcpy(name, end);
 	strcpy(end, "*.");
 	strcat(end, ext);
+	if (_AESnumapps == 1)
+	{
+		strupr(name);
+		strupr(end);
+	}
 	
 	if (Sversion() >= 0x1500)
 		ret = fsel_exinput(snap_filename, name, &button, rs_frstr[FS_CHOOSEFILE]);
@@ -469,6 +474,7 @@ static void write_snapshot(void)
 	long work_size;
 	void *work_mem;
 	_WORD fd;
+	_WORD pxy[8];
 
 	mem_fdb.fd_w = snap.g_w;
 	mem_fdb.fd_h = snap.g_h;
@@ -525,8 +531,6 @@ static void write_snapshot(void)
 		}
 	} else
 	{
-		_WORD pxy[8];
-		
 		for (y = 0; y < snap.g_h; y++)
 		{
 			pxy[0] = snap.g_x;
@@ -540,6 +544,20 @@ static void write_snapshot(void)
 			vro_cpyfm(vdi_handle, S_ONLY, pxy, &screen_fdb, &mem_fdb);
 		}
 	}
+
+	pxy[0] = snap.g_x;
+	pxy[1] = snap.g_y;
+	pxy[2] = snap.g_x + snap.g_w - 1;
+	pxy[3] = snap.g_y + snap.g_h - 1;
+	vsf_color(vdi_handle, G_BLACK);
+	vsf_perimeter(vdi_handle, FALSE);
+	vsf_interior(vdi_handle, FIS_SOLID);
+	vsf_style(vdi_handle, 0);
+	vs_clip(vdi_handle, 0, pxy);
+	vswr_mode(vdi_handle, MD_XOR);
+	v_bar(vdi_handle, pxy);
+	evnt_timer(500L);
+	v_bar(vdi_handle, pxy);
 	
 	v_show_c(vdi_handle, 1);
 	
@@ -559,12 +577,17 @@ static void write_snapshot(void)
 	{
 		work_mem = Malloc(work_size);
 		if (work_mem == NULL)
+		{
+			graf_mouse(ARROW, NULL);
 			form_alert(1, rs_frstr[AL_NOMEM]);
+			return;
+		}
 	}
 	
 	fd = (_WORD)Fcreate(snap_filename, 0);
 	if (fd < 0)
 	{
+		graf_mouse(ARROW, NULL);
 		form_alert(1, rs_frstr[AL_WRITEFILE]);
 	} else
 	{
@@ -572,6 +595,7 @@ static void write_snapshot(void)
 		work_size = converters[file_type].write_file(&mem_fdb, palette, work_mem);
 		if (work_size < 0)
 		{
+			graf_mouse(ARROW, NULL);
 			form_alert(1, rs_frstr[AL_WRITEFILE]);
 		}
 		Fclose(fd);
@@ -636,11 +660,21 @@ static void run_snapit(void)
 				graf_mkstate(&snap.g_x, &snap.g_y, &button, &state);
 			} while (!(button & 1));
 			graf_mouse(POINT_HAND, NULL);
-			graf_rubberbox(snap.g_x, snap.g_y, 0, 0, &snap.g_w, &snap.g_h);
+			graf_rubberbox(snap.g_x, snap.g_y, -snap.g_x, -snap.g_y, &snap.g_w, &snap.g_h);
 			graf_mouse(ARROW, NULL);
+			if (snap.g_w < 0)
+			{
+				snap.g_x += snap.g_w;
+				snap.g_w = -snap.g_w;
+			}
+			if (snap.g_h < 0)
+			{
+				snap.g_y += snap.g_h;
+				snap.g_h = -snap.g_h;
+			}
 		}
 		
-		if (snap.g_w > 0 && snap.g_h > 0)
+		if (rc_intersect(&screen, &snap))
 		{
 			write_snapshot();
 		}
