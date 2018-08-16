@@ -70,7 +70,7 @@ static _UWORD snap_delay = 3;
 static enum filetype file_type = FT_NONE;
 static _WORD snap_type = SNAP_SCREEN;
 static int snap_num = 1;
-static char snap_dir[PATH_MAX];
+static char snap_dir[PATH_MAX - 20];
 static char snap_filename[PATH_MAX];
 
 
@@ -458,10 +458,8 @@ static _BOOL next_snap_num(void)
 }
 
 
-static void run_snapit(void)
+static void write_snapshot(void)
 {
-	OBJECT *tree = rs_trindex[SNAP_DIALOG];
-	_WORD obj;
 	MFDB mem_fdb;
 	MFDB screen_fdb;
 	long line_len, snap_size;
@@ -471,6 +469,125 @@ static void run_snapit(void)
 	long work_size;
 	void *work_mem;
 	_WORD fd;
+
+	mem_fdb.fd_w = snap.g_w;
+	mem_fdb.fd_h = snap.g_h;
+	mem_fdb.fd_wdwidth = (mem_fdb.fd_w + 15) >> 4;
+	
+	if (force_24bit)
+	{
+		mem_fdb.fd_stand = 1;
+		mem_fdb.fd_nplanes = 24;
+		line_len = mem_fdb.fd_wdwidth * (24 << 1);
+	} else
+	{
+		mem_fdb.fd_stand = 0;
+		mem_fdb.fd_nplanes = vdi_planes;
+		line_len = mem_fdb.fd_wdwidth * (vdi_planes << 1);
+	}
+	snap_size = line_len * snap.g_h;
+	
+	get_colors();
+	
+	snap_mem = Malloc(snap_size);
+	if (snap_mem == NULL)
+	{
+		form_alert(1, rs_frstr[AL_NOMEM]);
+		return;
+	}
+	mem_fdb.fd_addr = snap_mem;
+	
+	screen_fdb.fd_addr = 0;
+	screen_fdb.fd_w = screen.g_w;
+	screen_fdb.fd_h = screen.g_h;
+	screen_fdb.fd_wdwidth = (screen.g_w + 15) >> 4;
+	screen_fdb.fd_nplanes = vdi_planes;
+	screen_fdb.fd_stand = 0;
+	
+	v_hide_c(vdi_handle);
+	
+	if (force_24bit)
+	{
+		_WORD pel, idx;
+		
+		snap_ptr = snap_mem;
+		for (y = 0; y < snap.g_h; y++)
+		{
+			snap_ptr = snap_mem + line_len * y;
+			for (x = 0; x < snap.g_w; x++)
+			{
+				v_get_pixel(vdi_handle, snap.g_x + x, snap.g_y + y, &pel, &idx);
+				idx &= 0xff;
+				*snap_ptr++ = c_red[idx];
+				*snap_ptr++ = c_green[idx];
+				*snap_ptr++ = c_blue[idx];
+			}
+		}
+	} else
+	{
+		_WORD pxy[8];
+		
+		for (y = 0; y < snap.g_h; y++)
+		{
+			pxy[0] = snap.g_x;
+			pxy[1] = snap.g_y + y;
+			pxy[2] = snap.g_x + snap.g_w - 1;
+			pxy[3] = snap.g_y + y;
+			pxy[4] = 0;
+			pxy[5] = y;
+			pxy[6] = snap.g_w - 1;
+			pxy[7] = y;
+			vro_cpyfm(vdi_handle, S_ONLY, pxy, &screen_fdb, &mem_fdb);
+		}
+	}
+	
+	v_show_c(vdi_handle, 1);
+	
+	if (next_snap_num() == FALSE)
+	{
+		Mfree(snap_mem);
+		return;
+	}
+	
+	graf_mouse(BUSY_BEE, NULL);
+
+	converters[file_type].safe_info(&mem_fdb);
+	
+	work_size = converters[file_type].estimate_size(&mem_fdb, palette);
+	work_mem = NULL;
+	if (work_size > 0)
+	{
+		work_mem = Malloc(work_size);
+		if (work_mem == NULL)
+			form_alert(1, rs_frstr[AL_NOMEM]);
+	}
+	
+	fd = (_WORD)Fcreate(snap_filename, 0);
+	if (fd < 0)
+	{
+		form_alert(1, rs_frstr[AL_WRITEFILE]);
+	} else
+	{
+		mem_fdb.fd_r1 = fd;
+		work_size = converters[file_type].write_file(&mem_fdb, palette, work_mem);
+		if (work_size < 0)
+		{
+			form_alert(1, rs_frstr[AL_WRITEFILE]);
+		}
+		Fclose(fd);
+	}
+	
+	Mfree(work_mem);
+	Mfree(snap_mem);
+
+	graf_mouse(ARROW, NULL);
+}
+
+
+static void run_snapit(void)
+{
+	OBJECT *tree = rs_trindex[SNAP_DIALOG];
+	_WORD obj;
 	char *delaystr;
 	
 	delaystr = tree[SNAP_DELAY].ob_spec.tedinfo->te_ptext;
@@ -525,121 +642,9 @@ static void run_snapit(void)
 		
 		if (snap.g_w > 0 && snap.g_h > 0)
 		{
-			mem_fdb.fd_w = snap.g_w;
-			mem_fdb.fd_h = snap.g_h;
-			mem_fdb.fd_wdwidth = (mem_fdb.fd_w + 15) >> 4;
-			
-			if (force_24bit)
-			{
-				mem_fdb.fd_stand = 1;
-				mem_fdb.fd_nplanes = 24;
-				line_len = mem_fdb.fd_wdwidth * (24 << 1);
-			} else
-			{
-				mem_fdb.fd_stand = 0;
-				mem_fdb.fd_nplanes = vdi_planes;
-				line_len = mem_fdb.fd_wdwidth * (vdi_planes << 1);
-			}
-			snap_size = line_len * snap.g_h;
-			
-			get_colors();
-			
-			snap_mem = Malloc(snap_size);
-			if (snap_mem == NULL)
-			{
-				form_alert(1, rs_frstr[AL_NOMEM]);
-				return;
-			}
-			mem_fdb.fd_addr = snap_mem;
-			
-			screen_fdb.fd_addr = 0;
-			screen_fdb.fd_w = screen.g_w;
-			screen_fdb.fd_h = screen.g_h;
-			screen_fdb.fd_wdwidth = (screen.g_w + 15) >> 4;
-			screen_fdb.fd_nplanes = vdi_planes;
-			screen_fdb.fd_stand = 0;
-			
-			v_hide_c(vdi_handle);
-			
-			if (force_24bit)
-			{
-				_WORD pel, idx;
-				
-				snap_ptr = snap_mem;
-				for (y = 0; y < snap.g_h; y++)
-				{
-					snap_ptr = snap_mem + line_len * y;
-					for (x = 0; x < snap.g_w; x++)
-					{
-						v_get_pixel(vdi_handle, snap.g_x + x, snap.g_y + y, &pel, &idx);
-						idx &= 0xff;
-						*snap_ptr++ = c_red[idx];
-						*snap_ptr++ = c_green[idx];
-						*snap_ptr++ = c_blue[idx];
-					}
-				}
-			} else
-			{
-				_WORD pxy[8];
-				
-				for (y = 0; y < snap.g_h; y++)
-				{
-					pxy[0] = snap.g_x;
-					pxy[1] = snap.g_y + y;
-					pxy[2] = snap.g_x + snap.g_w - 1;
-					pxy[3] = snap.g_y + y;
-					pxy[4] = 0;
-					pxy[5] = y;
-					pxy[6] = snap.g_w - 1;
-					pxy[7] = y;
-					vro_cpyfm(vdi_handle, S_ONLY, pxy, &screen_fdb, &mem_fdb);
-				}
-			}
-			
-			v_show_c(vdi_handle, 1);
-			
-			if (next_snap_num() == FALSE)
-			{
-				Mfree(snap_mem);
-				return;
-			}
-			
-			graf_mouse(BUSY_BEE, NULL);
-
-			converters[file_type].safe_info(&mem_fdb);
-			
-			work_size = converters[file_type].estimate_size(&mem_fdb, palette);
-			work_mem = NULL;
-			if (work_size > 0)
-			{
-				work_mem = Malloc(work_size);
-				if (work_mem == NULL)
-					form_alert(1, rs_frstr[AL_NOMEM]);
-			}
-			
-			fd = (_WORD)Fcreate(snap_filename, 0);
-			if (fd < 0)
-			{
-				form_alert(1, rs_frstr[AL_WRITEFILE]);
-			} else
-			{
-				mem_fdb.fd_r1 = fd;
-				work_size = converters[file_type].write_file(&mem_fdb, palette, work_mem);
-				if (work_size < 0)
-				{
-					form_alert(1, rs_frstr[AL_WRITEFILE]);
-				}
-				Fclose(fd);
-			}
-			
-			Mfree(work_mem);
-			Mfree(snap_mem);
-
-			graf_mouse(ARROW, NULL);
+			write_snapshot();
 		}
 	}
-	
-	
 }
 
 
