@@ -6,18 +6,18 @@
 
 /*
  * Number of Strings:        25
- * Number of Bitblks:        1
+ * Number of Bitblks:        0
  * Number of Iconblks:       0
  * Number of Color Iconblks: 0
  * Number of Color Icons:    0
  * Number of Tedinfos:       2
  * Number of Free Strings:   5
  * Number of Free Images:    0
- * Number of Objects:        20
+ * Number of Objects:        19
  * Number of Trees:          2
  * Number of Userblks:       0
- * Number of Images:         1
- * Total file size:          3024
+ * Number of Images:         0
+ * Total file size:          980
  */
 
 #undef RSC_NAME
@@ -38,13 +38,13 @@
 #define NUM_STRINGS 25
 #define NUM_FRSTR 5
 #define NUM_UD 0
-#define NUM_IMAGES 1
-#define NUM_BB 1
+#define NUM_IMAGES 0
+#define NUM_BB 0
 #define NUM_FRIMG 0
 #define NUM_IB 0
 #define NUM_CIB 0
 #define NUM_TI 2
-#define NUM_OBS 20
+#define NUM_OBS 19
 #define NUM_TREE 2
 #endif
 
