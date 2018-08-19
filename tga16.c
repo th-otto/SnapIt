@@ -8,13 +8,6 @@
 #define WORK_SIZE 16000L
 
 
-long tga16_safe_info(const MFDB *pic)
-{
-	UNUSED(pic);
-	return 0;
-}
-
-
 long tga16_estimate_size(const MFDB *pic, const _WORD palette[][3])
 {
 	UNUSED(pic);

@@ -1,5 +1,6 @@
 #include <gem.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <mint/mintbind.h>
 #include "externs.h"
 #include "s_img.h"
@@ -76,13 +77,6 @@ static __inline long lmul(short x, short y)
 #define ulmul(x, y) ((unsigned long)(x) * (unsigned long)(y))
 #define lmul(x, y) ((long)(x) * (long)(y))
 #endif
-
-
-long img_safe_info(const MFDB *pic)
-{
-	UNUSED(pic);
-	return 0;
-}
 
 
 static _WORD img_header_len(const MFDB *pic, const _WORD palette[][3])

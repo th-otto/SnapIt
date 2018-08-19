@@ -53,18 +53,17 @@ enum filetype {
 
 struct converter {
 	char ext[4];
-	long (*safe_info)(const MFDB *pic);
 	long (*estimate_size)(const MFDB *pic, const _WORD palette[][3]);
 	long (*write_file)(const MFDB *pic, const _WORD palette[][3], void *mem);
 };
 
 static struct converter const converters[] = {
-	{ "", 0, 0, 0 },
-	{ "img", img_safe_info, img_estimate_size, img_write_file },
-	{ "gif", gif_safe_info, gif_estimate_size, 0 },
-	{ "tga", tga16_safe_info, tga16_estimate_size, tga16_write_file },
-	{ "tga", tga24_safe_info, tga24_estimate_size, tga24_write_file },
-	{ "png", 0, 0, 0 },
+	{ "", 0, 0 },
+	{ "img", img_estimate_size, img_write_file },
+	{ "gif", gif_estimate_size, 0 },
+	{ "tga", tga16_estimate_size, tga16_write_file },
+	{ "tga", tga24_estimate_size, tga24_write_file },
+	{ "png", 0, 0 },
 };
 
 /*
@@ -619,8 +618,6 @@ static void write_snapshot(void)
 	
 	graf_mouse(BUSY_BEE, NULL);
 
-	converters[file_type].safe_info(&mem_fdb);
-	
 	work_size = converters[file_type].estimate_size(&mem_fdb, palette);
 	work_mem = NULL;
 	if (work_size > 0)
