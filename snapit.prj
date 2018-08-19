@@ -1,4 +1,4 @@
-snapit.prg
+c:\snapit.acc
 
 .C[-DZLIB_SLB=1]
 .C[-DPNGLIB_SLB=1]
@@ -32,6 +32,8 @@ cstartv.o
 snapit.c
 tga16.c
 tga24.c
+img.c
+gif.c
 cookie.c
 
 zlibslb.lib

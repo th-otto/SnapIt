@@ -1,4 +1,4 @@
- #include <gem.h>
+#include <gem.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -7,7 +7,6 @@
 #include <mint/mintbind.h>
 #include <mint/cookie.h>
 #include <mint/arch/nf_ops.h>
-#include "externs.h"
 
 #define RSC_NAMED_FUNCTIONS 1
 #define RSC_STATIC_FILE 1
@@ -15,11 +14,13 @@
 #define hrelease_objs(a, b)
 #include "snapit.rsh"
 
+#include "externs.h"
 #include "s_tga16.h"
 #include "s_tga24.h"
 #include "s_img.h"
+#include "s_gif.h"
 
-extern _WORD _app;
+extern short _app;
 
 static _WORD gl_wchar, gl_hchar, gl_wbox, gl_hbox;
 static _WORD aes_handle;
@@ -59,14 +60,44 @@ struct converter {
 
 static struct converter const converters[] = {
 	{ "", 0, 0, 0 },
-	{ "img", 0, 0, 0 },
-	{ "gif", 0, 0, 0 },
+	{ "img", img_safe_info, img_estimate_size, img_write_file },
+	{ "gif", gif_safe_info, gif_estimate_size, 0 },
 	{ "tga", tga16_safe_info, tga16_estimate_size, tga16_write_file },
 	{ "tga", tga24_safe_info, tga24_estimate_size, tga24_write_file },
 	{ "png", 0, 0, 0 },
 };
 
-static _UWORD snap_delay = 3;
+/*
+ * Map from ST standard pixel values to VDI colors, 2 planes
+ */
+static unsigned char const vdi_revtab4[4] = { 0, 2, 3, 1 };
+/*
+ * Map from ST standard pixel values to VDI colors, 4 planes
+ */
+static unsigned char const vdi_revtab16[16] = { 0,  2, 3, 6, 4, 7, 5, 8, 9, 10, 11, 14, 12, 15, 13,  1 };
+/*
+ * Map from ST standard pixel values to VDI colors, 8 planes
+ */
+static unsigned char const vdi_revtab256[256] = {
+    0,   2,   3,   6,   4,   7,   5,   8,   9,  10,  11,  14,  12,  15,  13, 255,
+   16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
+   32 , 33 , 34 , 35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,
+   48 , 49 , 50 , 51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,
+   64 , 65 , 66 , 67,  68,  69,  70,  71,  72,  73,  74,  75,  76,  77,  78,  79,
+   80 , 81 , 82 , 83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
+   96,  97,  98,  99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+  112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+  128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143,
+  144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159,
+  160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175,
+  176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,
+  192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207,
+  208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223,
+  224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
+  240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,   1
+};
+
+static _UWORD snap_delay = 0;
 static enum filetype file_type = FT_NONE;
 static _WORD snap_type = SNAP_SCREEN;
 static int snap_num = 1;
@@ -167,8 +198,8 @@ static void draw_dialog(OBJECT *tree, GRECT *gr)
 	form_center_grect(tree, gr);
 	if (x != 0 && y != 0)
 	{
-		gr->g_x = x + tree[ROOT].ob_x - gr->g_x;
-		gr->g_y = y + tree[ROOT].ob_y - gr->g_y;
+		gr->g_x = x + gr->g_x - tree[ROOT].ob_x;
+		gr->g_y = y + gr->g_y - tree[ROOT].ob_y;
 		tree[ROOT].ob_x = x;
 		tree[ROOT].ob_y = y;
 	}
@@ -203,7 +234,10 @@ static void select_file_type(void)
 		case 6:
 		case 7:
 		case 8:
-			file_type = FT_GIF;
+			if (converters[FT_GIF].write_file)
+				file_type = FT_GIF;
+			else
+				file_type = FT_IMG;
 			break;
 		case 15:
 		case 16:
@@ -359,13 +393,29 @@ static void get_colors(void)
 	_WORD i, colors;
 	_WORD color[3];
 	unsigned long col;
+	_WORD idx;
 	
 	if (vdi_planes > 8)
 		return;
 	colors = 1 << vdi_planes;
 	for (i = 0; i < colors; i++)
 	{
-		vq_color(vdi_handle, i, 1, color);
+		switch (vdi_planes)
+		{
+		case 2:
+			idx = vdi_revtab4[i];
+			break;
+		case 4:
+			idx = vdi_revtab16[i];
+			break;
+		case 8:
+			idx = vdi_revtab256[i];
+			break;
+		default:
+			idx = i;
+			break;
+		}
+		vq_color(vdi_handle, idx, 0, color);
 		palette[i][0] = color[0];
 		palette[i][1] = color[1];
 		palette[i][2] = color[2];
@@ -632,10 +682,22 @@ static void run_snapit(void)
 		{
 			snap_type = SNAP_SCREEN;
 			snap = screen;
+			/*
+			 * give other programs time to process WM_REDRAW
+			 * messages resulting from FMD_FINISH
+			 */
+			uncontrol();
+			evnt_timer(snap_delay * 1000L);
+			control();
 		} else if (tree[SNAP_TOP_CURR].ob_state & OS_SELECTED)
 		{
 			snap_type = SNAP_TOP_CURR;
 			snap = desk;
+			/*
+			 * give other programs time to process WM_REDRAW
+			 * messages resulting from FMD_FINISH,
+			 * and the user the chance to select a window
+			 */
 			uncontrol();
 			evnt_timer(snap_delay * 1000L);
 			control();
@@ -645,6 +707,11 @@ static void run_snapit(void)
 		{
 			snap_type = SNAP_TOP_WORK;
 			snap = desk;
+			/*
+			 * give other programs time to process WM_REDRAW
+			 * messages resulting from FMD_FINISH,
+			 * and the user the chance to select a window
+			 */
 			uncontrol();
 			evnt_timer(snap_delay * 1000L);
 			control();
@@ -717,9 +784,12 @@ static void event_loop(void)
 			{
 				return;
 			}
+			break;
 		case AP_TERM:
 			free_mem();
-			return;
+			if (_app || _AESnumapps != 1)
+				return;
+			break;
 		}
 	}
 }

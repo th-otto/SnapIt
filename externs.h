@@ -19,6 +19,14 @@
 #  endif
 #endif
 
+#ifndef _UBYTE
+# ifdef UBYTE
+#  define _UBYTE UBYTE
+# else
+#  define _UBYTE unsigned char
+#  endif
+#endif
+
 #ifndef UNUSED
 # define UNUSED(x) (void)(x)
 #endif

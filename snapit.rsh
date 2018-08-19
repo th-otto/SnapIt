@@ -491,7 +491,7 @@ static TEDINFO rs_tedinfo[NUM_TI] = {
 static OBJECT rs_object[NUM_OBS] = {
 /* ABOUT_DIALOG */
 
-	{ -1, 1, 9, G_BOX, OF_FL3DBAK, OS_NORMAL, C_UNION(0x11180L), 0,0, 47,14 },
+	{ -1, 1, 9, G_BOX, OF_FL3DBAK, OS_OUTLINED, C_UNION(0x21180L), 0,0, 47,14 },
 	{ 2, -1, -1, G_IMAGE, OF_NONE, OS_NORMAL, C_UNION(&rs_bitblk[0]), 30,0, 16,30976 },
 	{ 3, -1, -1, G_BOXTEXT, OF_FL3DACT, OS_NORMAL, C_UNION(&rs_tedinfo[0]), 2,1, 20,1 },
 	{ 4, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_3), 2,3, 14,1 },
@@ -504,7 +504,7 @@ static OBJECT rs_object[NUM_OBS] = {
 
 /* SNAP_DIALOG */
 
-	{ -1, 1, 9, G_BOX, OF_FL3DBAK, OS_NORMAL, C_UNION(0x11100L), 0,0, 35,10 },
+	{ -1, 1, 9, G_BOX, OF_FL3DBAK, OS_OUTLINED, C_UNION(0x21100L), 0,0, 35,10 },
 	{ 6, 2, 5, G_IBOX, OF_NONE, OS_NORMAL, C_UNION(0x1100L), 2,1, 31,4 },
 	{ 3, -1, -1, G_BUTTON, 0x411, 0xFC41, C_UNION(snapit_string_10), 0,0, 25,1 }, /* SNAP_SCREEN */
 	{ 4, -1, -1, G_BUTTON, 0x411, 0xFC40, C_UNION(snapit_string_11), 0,1, 25,1 }, /* SNAP_TOP_CURR */
