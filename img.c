@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <mint/mintbind.h>
 #include "externs.h"
-#include "s_img.h"
 
 typedef struct {                /* Header fuer GEM-Bilder */
     _UBYTE version[2];          /* Versionsnummer */
@@ -47,39 +46,7 @@ typedef struct ximg_header {
 
 
 
-#if defined(__PUREC__)
-static unsigned long ulmul(unsigned short x, unsigned short y) 0xc0c1;
-static long lmul(short x, short y) 0xc1c1;
-#elif defined(__GNUC__) && defined(__mc68000__)
-static __inline unsigned long ulmul(unsigned short x, unsigned short y)
-{
-	unsigned long z;
-	
-	__asm__ __volatile(
-		" mulu.w %1,%0"
-	: "=d"(z)
-	: "d"(y), "0"(x)
-	: "cc");
-	return z;
-}
-static __inline long lmul(short x, short y)
-{
-	long z;
-	
-	__asm__ __volatile(
-		" muls.w %1,%0"
-	: "=d"(z)
-	: "d"(y), "0"(x)
-	: "cc");
-	return z;
-}
-#else
-#define ulmul(x, y) ((unsigned long)(x) * (unsigned long)(y))
-#define lmul(x, y) ((long)(x) * (long)(y))
-#endif
-
-
-static _WORD img_header_len(const MFDB *pic, const _WORD palette[][3])
+static _WORD img_header_len(const MFDB *pic, const void *palette)
 {
 	_WORD planes = pic->fd_nplanes;
 	_WORD headlen;
@@ -92,7 +59,7 @@ static _WORD img_header_len(const MFDB *pic, const _WORD palette[][3])
 }
 
 
-long img_estimate_size(const MFDB *pic, const _WORD palette[][3])
+static long img_estimate_size(const MFDB *pic, const void *palette)
 {
 	_WORD width = pic->fd_w;
 	_WORD height = pic->fd_h;
@@ -419,7 +386,7 @@ static _UBYTE *img_pack_interleaved(
 }
 
 
-long img_write_file(const MFDB *pic, const _WORD palette[][3], void *mem)
+static long img_write_file(const MFDB *pic, const void *palette, void *mem)
 {
 	_WORD width = pic->fd_w;
 	_WORD height = pic->fd_h;
@@ -446,6 +413,7 @@ long img_write_file(const MFDB *pic, const _WORD palette[][3], void *mem)
 	{
 		_WORD ncolors, i;
 		_WORD color;
+		const _WORD *pal = (const _WORD *)palette;
 		
 		ncolors = (1 << planes);
 		put_long(XIMG_MAGIC);
@@ -453,11 +421,11 @@ long img_write_file(const MFDB *pic, const _WORD palette[][3], void *mem)
 		
 		for (i = 0; i < ncolors; i++)
 		{
-			color = palette[i][0];
+			color = pal[i * 3 + 0];
 			put_word(color);
-			color = palette[i][1];
+			color = pal[i * 3 + 1];
 			put_word(color);
-			color = palette[i][2];
+			color = pal[i * 3 + 2];
 			put_word(color);
 		}
 	}
@@ -473,3 +441,5 @@ long img_write_file(const MFDB *pic, const _WORD palette[][3], void *mem)
 	
 	return 0;
 }
+
+struct converter const img_converter = { "img", 0, img_estimate_size, img_write_file };

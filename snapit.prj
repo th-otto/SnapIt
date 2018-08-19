@@ -34,6 +34,7 @@ tga16.c
 tga24.c
 img.c
 gif.c
+png.c
 cookie.c
 
 zlibslb.lib

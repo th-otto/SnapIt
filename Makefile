@@ -10,7 +10,7 @@ LIBS = -lgem
 
 all: $(PROGRAMS)
 
-snapit.prg: snapit.o tga16.o tga24.o img.o gif.o cookie.o
+snapit.prg: snapit.o tga16.o tga24.o img.o gif.o png.o cookie.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 snapit.o: snapit.c snapit.rsh snapit.h

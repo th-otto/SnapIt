@@ -15,10 +15,6 @@
 #include "snapit.rsh"
 
 #include "externs.h"
-#include "s_tga16.h"
-#include "s_tga24.h"
-#include "s_img.h"
-#include "s_gif.h"
 
 extern short _app;
 
@@ -36,9 +32,7 @@ static _WORD __magix;
 static _WORD __mint;
 
 
-static unsigned char c_red[256];
-static unsigned char c_green[256];
-static unsigned char c_blue[256];
+static RGBPALETTE rgb_palette;
 static _WORD palette[256][3];
 
 
@@ -51,19 +45,19 @@ enum filetype {
 	FT_PNG
 };
 
-struct converter {
-	char ext[4];
-	long (*estimate_size)(const MFDB *pic, const _WORD palette[][3]);
-	long (*write_file)(const MFDB *pic, const _WORD palette[][3], void *mem);
-};
+extern struct converter const img_converter;
+extern struct converter const gif_converter;
+extern struct converter const tga16_converter;
+extern struct converter const tga24_converter;
+extern struct converter const png_converter;
 
-static struct converter const converters[] = {
-	{ "", 0, 0 },
-	{ "img", img_estimate_size, img_write_file },
-	{ "gif", gif_estimate_size, 0 },
-	{ "tga", tga16_estimate_size, tga16_write_file },
-	{ "tga", tga24_estimate_size, tga24_write_file },
-	{ "png", 0, 0 },
+static const struct converter *const converters[] = {
+	NULL,
+	&img_converter,
+	&gif_converter,
+	&tga16_converter,
+	&tga24_converter,
+	&png_converter
 };
 
 /*
@@ -214,7 +208,7 @@ static void undraw_dialog(OBJECT *tree, GRECT *gr)
 }
 
 
-static void select_file_type(void)
+static void default_file_type(void)
 {
 	if (force_24bit)
 	{
@@ -233,10 +227,7 @@ static void select_file_type(void)
 		case 6:
 		case 7:
 		case 8:
-			if (converters[FT_GIF].write_file)
-				file_type = FT_GIF;
-			else
-				file_type = FT_IMG;
+			file_type = FT_GIF;
 			break;
 		case 15:
 		case 16:
@@ -299,7 +290,7 @@ static _BOOL win_init(void)
 	
 	wind_get_grect(0, WF_WORKXYWH, &desk);
 
-	select_file_type();
+	default_file_type();
 	
 	return TRUE;
 }
@@ -419,11 +410,11 @@ static void get_colors(void)
 		palette[i][1] = color[1];
 		palette[i][2] = color[2];
 		col = color[0];
-		c_red[i] = (unsigned char)((col * 25599u) / 100000lu);
+		rgb_palette[i].r = (unsigned char)((col * 25599u) / 100000lu);
 		col = color[1];
-		c_green[i] = (unsigned char)((col * 25599u) / 100000lu);
+		rgb_palette[i].g = (unsigned char)((col * 25599u) / 100000lu);
 		col = color[2];
-		c_blue[i] = (unsigned char)((col * 25599u) / 100000lu);
+		rgb_palette[i].b = (unsigned char)((col * 25599u) / 100000lu);
 	}
 }
 
@@ -453,7 +444,7 @@ static _BOOL next_snap_num(void)
 	
 	if (file_type == FT_NONE)
 		return FALSE;
-	ext = converters[file_type].ext;
+	ext = converters[file_type]->ext;
 	
 	for (;;)
 	{
@@ -524,7 +515,8 @@ static void write_snapshot(void)
 	void *work_mem;
 	_WORD fd;
 	_WORD pxy[8];
-
+	const void *pal;
+	
 	mem_fdb.fd_w = snap.g_w;
 	mem_fdb.fd_h = snap.g_h;
 	mem_fdb.fd_wdwidth = (mem_fdb.fd_w + 15) >> 4;
@@ -572,10 +564,10 @@ static void write_snapshot(void)
 			for (x = 0; x < snap.g_w; x++)
 			{
 				v_get_pixel(vdi_handle, snap.g_x + x, snap.g_y + y, &pel, &idx);
-				idx &= 0xff;
-				*snap_ptr++ = c_red[idx];
-				*snap_ptr++ = c_green[idx];
-				*snap_ptr++ = c_blue[idx];
+				pel &= 0xff;
+				*snap_ptr++ = rgb_palette[pel].r;
+				*snap_ptr++ = rgb_palette[pel].g;
+				*snap_ptr++ = rgb_palette[pel].b;
 			}
 		}
 	} else
@@ -618,7 +610,8 @@ static void write_snapshot(void)
 	
 	graf_mouse(BUSY_BEE, NULL);
 
-	work_size = converters[file_type].estimate_size(&mem_fdb, palette);
+	pal = converters[file_type]->flags & CONV_RGB_PALETTE ? (const void *)rgb_palette : (const void *)palette;
+	work_size = converters[file_type]->estimate_size(&mem_fdb, pal);
 	work_mem = NULL;
 	if (work_size > 0)
 	{
@@ -639,7 +632,7 @@ static void write_snapshot(void)
 	} else
 	{
 		mem_fdb.fd_r1 = fd;
-		work_size = converters[file_type].write_file(&mem_fdb, palette, work_mem);
+		work_size = converters[file_type]->write_file(&mem_fdb, pal, work_mem);
 		if (work_size < 0)
 		{
 			graf_mouse(ARROW, NULL);

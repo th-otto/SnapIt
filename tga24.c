@@ -2,13 +2,12 @@
 #include <stddef.h>
 #include <mint/mintbind.h>
 #include "externs.h"
-#include "s_tga24.h"
 
 #define TGA_HEAD_SIZE 18
 #define WORK_SIZE 16000L
 
 
-long tga24_estimate_size(const MFDB *pic, const _WORD palette[][3])
+static long tga24_estimate_size(const MFDB *pic, const void *palette)
 {
 	UNUSED(pic);
 	UNUSED(palette);
@@ -16,7 +15,7 @@ long tga24_estimate_size(const MFDB *pic, const _WORD palette[][3])
 }
 
 
-long tga24_write_file(const MFDB *pic, const _WORD palette[][3], void *mem)
+static long tga24_write_file(const MFDB *pic, const void *palette, void *mem)
 {
 	unsigned char *outptr = (unsigned char *)mem;
 	unsigned char *outstart;
@@ -102,3 +101,5 @@ long tga24_write_file(const MFDB *pic, const _WORD palette[][3], void *mem)
 	
 	return 0;
 }
+
+struct converter const tga24_converter = { "tga", 0, tga24_estimate_size, tga24_write_file };
