@@ -95,7 +95,7 @@ long img_write_file(const MFDB *pic, const _WORD palette[][3], void *mem)
 	_UWORD remain;
 	_UBYTE c, c2;
 	
-	outfile = pic->fd_r1;
+	outfile = OUT_FD(pic);
 	if (palette == 0)
 		x104a6 = 0;
 	
@@ -252,7 +252,7 @@ long img_write_file(const MFDB *pic, const _WORD palette[][3], void *mem)
 	} while (0);
 	/* 102c2 */
 	
-	if (out_size > 0 && Fwrite(pic->fd_r1, out_size, outstart) != out_size)
+	if (out_size > 0 && Fwrite(OUT_FD(pic), out_size, outstart) != out_size)
 		return -1;
 	
 	return 0;

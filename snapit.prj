@@ -1,4 +1,5 @@
-c:\snapit.acc
+;c:\snapit.acc
+snapit.prg
 
 .C[-DZLIB_SLB=1]
 .C[-DPNGLIB_SLB=1]

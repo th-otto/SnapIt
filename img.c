@@ -421,11 +421,11 @@ static long img_write_file(const MFDB *pic, const void *palette, void *mem)
 		
 		for (i = 0; i < ncolors; i++)
 		{
-			color = pal[i * 3 + 0];
+			color = pal[i * 4 + 0];
 			put_word(color);
-			color = pal[i * 3 + 1];
+			color = pal[i * 4 + 1];
 			put_word(color);
-			color = pal[i * 3 + 2];
+			color = pal[i * 4 + 2];
 			put_word(color);
 		}
 	}
@@ -436,10 +436,17 @@ static long img_write_file(const MFDB *pic, const void *palette, void *mem)
 		outptr = img_pack_interleaved(outptr, (const _UBYTE *)pic->fd_addr, width, height, planes);
 	size = outptr - buf;
 	
-	if (size > 0 && Fwrite(pic->fd_r1, size, buf) != size)
+	if (size > 0 && Fwrite(OUT_FD(pic), size, buf) != size)
 		return -1;
 	
 	return 0;
 }
 
-struct converter const img_converter = { "img", 0, img_estimate_size, img_write_file };
+struct converter const img_converter = {
+	"GEM (X)IMG",
+	"img",
+	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP,
+	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP,
+	img_estimate_size,
+	img_write_file
+};

@@ -5,7 +5,7 @@
  */
 
 /*
- * Number of Strings:        25
+ * Number of Strings:        33
  * Number of Bitblks:        0
  * Number of Iconblks:       0
  * Number of Color Iconblks: 0
@@ -13,11 +13,11 @@
  * Number of Tedinfos:       2
  * Number of Free Strings:   5
  * Number of Free Images:    0
- * Number of Objects:        19
+ * Number of Objects:        28
  * Number of Trees:          2
  * Number of Userblks:       0
  * Number of Images:         0
- * Total file size:          980
+ * Total file size:          1258
  */
 
 #undef RSC_NAME
@@ -35,7 +35,7 @@
 # define RSC_STATIC_FILE 0
 #endif
 #if !RSC_STATIC_FILE
-#define NUM_STRINGS 25
+#define NUM_STRINGS 33
 #define NUM_FRSTR 5
 #define NUM_UD 0
 #define NUM_IMAGES 0
@@ -44,7 +44,7 @@
 #define NUM_IB 0
 #define NUM_CIB 0
 #define NUM_TI 2
-#define NUM_OBS 19
+#define NUM_OBS 28
 #define NUM_TREE 2
 #endif
 
@@ -53,14 +53,20 @@
 #define ABOUT_DIALOG                       0 /* form/dialog */
 
 #define SNAP_DIALOG                        1 /* form/dialog */
-#define SNAP_SCREEN                        2 /* BUTTON in tree SNAP_DIALOG */
-#define SNAP_TOP_CURR                      3 /* BUTTON in tree SNAP_DIALOG */
-#define SNAP_TOP_WORK                      4 /* BUTTON in tree SNAP_DIALOG */
-#define SNAP_RUBBER                        5 /* BUTTON in tree SNAP_DIALOG */
-#define SNAP_DELAY                         6 /* FTEXT in tree SNAP_DIALOG */ /* max len 1 */
-#define SNAP_HELP                          7 /* BUTTON in tree SNAP_DIALOG */
-#define SNAP_OK                            8 /* BUTTON in tree SNAP_DIALOG */
-#define SNAP_CANCEL                        9 /* BUTTON in tree SNAP_DIALOG */
+#define SNAP_SCREEN                        4 /* BUTTON in tree SNAP_DIALOG */
+#define SNAP_TOP_CURR                      5 /* BUTTON in tree SNAP_DIALOG */
+#define SNAP_TOP_WORK                      6 /* BUTTON in tree SNAP_DIALOG */
+#define SNAP_RUBBER                        7 /* BUTTON in tree SNAP_DIALOG */
+#define O_IMG                              9 /* BUTTON in tree SNAP_DIALOG */
+#define O_GIF                             10 /* BUTTON in tree SNAP_DIALOG */
+#define O_TGA16                           11 /* BUTTON in tree SNAP_DIALOG */
+#define O_TGA24                           12 /* BUTTON in tree SNAP_DIALOG */
+#define O_PNG                             13 /* BUTTON in tree SNAP_DIALOG */
+#define SNAP_DELAY                        14 /* FTEXT in tree SNAP_DIALOG */ /* max len 1 */
+#define FORCE_TRUECOLOR                   15 /* BUTTON in tree SNAP_DIALOG */
+#define SNAP_HELP                         16 /* BUTTON in tree SNAP_DIALOG */
+#define SNAP_OK                           17 /* BUTTON in tree SNAP_DIALOG */
+#define SNAP_CANCEL                       18 /* BUTTON in tree SNAP_DIALOG */
 
 #define AL_NOMEM                           0 /* Alert string */
 /* [1][Not enough memory!][Cancel] */

@@ -1144,7 +1144,7 @@ static long gif_write_file(const MFDB *pic, const void *palette, void *mem)
 	/* All set, let's do it. */
 	ret = GIFEncode(gif, 0, comment, -1 , TRUE);
 	if (gif->alloc_error ||
-		(size_t)Fwrite(pic->fd_r1, gif->outbuf_len, gif->outbuf) != gif->outbuf_len)
+		(size_t)Fwrite(OUT_FD(pic), gif->outbuf_len, gif->outbuf) != gif->outbuf_len)
 	{
 		ret = -1;
 	} else
@@ -1164,4 +1164,11 @@ static long gif_estimate_size(const MFDB *pic, const void *palette)
 	return 0;
 }
 
-struct converter const gif_converter = { "gif", CONV_RGB_PALETTE, gif_estimate_size, gif_write_file };
+struct converter const gif_converter = {
+	"GIF",
+	"gif",
+	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP|CONV_RGB_PALETTE,
+	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP|CONV_RGB_PALETTE,
+	gif_estimate_size,
+	gif_write_file
+};

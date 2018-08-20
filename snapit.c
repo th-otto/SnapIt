@@ -29,11 +29,13 @@ static GRECT screen;
 static GRECT snap;
 static _WORD menu_id;
 static _WORD __magix;
+#if 0 /* currently unused */
 static _WORD __mint;
+#endif
 
 
 static RGBPALETTE rgb_palette;
-static _WORD palette[256][3];
+static _WORD vdi_palette[256][4];
 
 
 enum filetype {
@@ -51,13 +53,16 @@ extern struct converter const tga16_converter;
 extern struct converter const tga24_converter;
 extern struct converter const png_converter;
 
-static const struct converter *const converters[] = {
-	NULL,
-	&img_converter,
-	&gif_converter,
-	&tga16_converter,
-	&tga24_converter,
-	&png_converter
+static struct {
+	const struct converter *converter;
+	_WORD obj;
+} const converters[] = {
+	{ NULL, 0 },
+	{ &img_converter, O_IMG },
+	{ &gif_converter, O_GIF },
+	{ &tga16_converter, O_TGA16 },
+	{ &tga24_converter, O_TGA24 },
+	{ &png_converter, O_PNG }
 };
 
 /*
@@ -100,6 +105,9 @@ static char snap_filename[PATH_MAX];
 
 static char const gl_menu_name[] = "  SnapIt";
 
+/******************************************************************************/
+/*** ---------------------------------------------------------------------- ***/
+/******************************************************************************/
 
 #if 0 /* unused */
 static unsigned short Mxmask(void)
@@ -119,6 +127,7 @@ static unsigned short Mxmask(void)
 	return mxmask;
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void *mxalloc(long amount, unsigned short mode)
 {
@@ -129,6 +138,9 @@ static void *mxalloc(long amount, unsigned short mode)
 }
 #endif
 
+/******************************************************************************/
+/*** ---------------------------------------------------------------------- ***/
+/******************************************************************************/
 
 static _BOOL acc_exit(void)
 {
@@ -142,7 +154,7 @@ static _BOOL acc_exit(void)
 	return FALSE;
 }
 
-
+/*** ---------------------------------------------------------------------- ***/
 
 static _BOOL test_chunky(_WORD planes)
 {
@@ -181,6 +193,7 @@ static _BOOL test_chunky(_WORD planes)
 	return FALSE;
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void draw_dialog(OBJECT *tree, GRECT *gr)
 {
@@ -200,6 +213,7 @@ static void draw_dialog(OBJECT *tree, GRECT *gr)
 	objc_draw_grect(tree, ROOT, MAX_DEPTH, gr);
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void undraw_dialog(OBJECT *tree, GRECT *gr)
 {
@@ -207,12 +221,13 @@ static void undraw_dialog(OBJECT *tree, GRECT *gr)
 	form_dial_grect(FMD_FINISH, gr, gr);
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void default_file_type(void)
 {
-	if (force_24bit)
+	if (force_24bit || chunky_mode)
 	{
-		file_type =  FT_TGA24;
+		file_type = FT_TGA24;
 	} else
 	{
 		switch (vdi_planes)
@@ -241,16 +256,51 @@ static void default_file_type(void)
 	}
 }
 
+/*** ---------------------------------------------------------------------- ***/
+
+static _BOOL open_vwork(void)
+{
+	int i;
+	_WORD workin[15];
+	_WORD workout[57];
+	_WORD xworkout[57];
+
+	for (i = 0; i < 10; i++)
+		workin[i] = 1;
+	workin[10] = 2;
+	vdi_handle = aes_handle;
+	v_opnvwk(workin, &vdi_handle, workout);
+	if (vdi_handle <= 0)
+		return FALSE;
+	
+	screen.g_w = workout[0] + 1;
+	screen.g_h = workout[1] + 1;
+	
+	vq_extnd(vdi_handle, 1, xworkout);
+	vdi_planes = xworkout[4];
+	chunky_mode = test_chunky(vdi_planes);
+	
+	return TRUE;
+}
+
+/*** ---------------------------------------------------------------------- ***/
+
+static void close_vwork(void)
+{
+	if (vdi_handle > 0)
+	{
+		v_clsvwk(vdi_handle);
+		vdi_handle = 0;
+	}
+}
+
+/*** ---------------------------------------------------------------------- ***/
 
 static _BOOL win_init(void)
 {
 	_LONG l;
 	_WORD dummy;
 	_WORD level;
-	_WORD workin[15];
-	_WORD workout[57];
-	_WORD xworkout[57];
-	int i;
 	
 	gl_apid = appl_init();
 	if (gl_apid < 0)
@@ -258,8 +308,10 @@ static _BOOL win_init(void)
 	Pdomain(1);
 	aes_handle = graf_handle(&gl_wchar, &gl_hchar, &gl_wbox, &gl_hbox);
 	
+#if 0
 	if (Cookie_ReadJar(C_MiNT, &l) != FALSE)
 		__mint = (_WORD)l;
+#endif
 	if (Cookie_ReadJar(C_MagX, &l) != FALSE)
 		__magix = ((short **)l)[2][24];
 
@@ -272,22 +324,9 @@ static _BOOL win_init(void)
 		 || (__magix >= 0x400))
 		shel_write(SWM_NEWMSG, 1, 1, "", "");			/* wir koennen AP_TERM! */
 
-	for (i = 0; i < 10; i++)
-		workin[i] = 1;
-	workin[10] = 2;
-	vdi_handle = aes_handle;
-	v_opnvwk(workin, &vdi_handle, workout);
-	if (vdi_handle <= 0)
+	if (open_vwork() == FALSE)
 		return acc_exit();
-	
-	screen.g_w = workout[0] + 1;
-	screen.g_h = workout[1] + 1;
-	
-	vq_extnd(vdi_handle, 1, xworkout);
-	vdi_planes = xworkout[4];
-	chunky_mode = test_chunky(vdi_planes);
-	force_24bit = vdi_planes == 8 && chunky_mode;
-	
+
 	wind_get_grect(0, WF_WORKXYWH, &desk);
 
 	default_file_type();
@@ -295,19 +334,18 @@ static _BOOL win_init(void)
 	return TRUE;
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void free_mem(void)
 {
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void win_exit(void)
 {
-	if (vdi_handle > 0)
-	{
-		v_clsvwk(vdi_handle);
-		vdi_handle = 0;
-	}
+	close_vwork();
+	free_mem();
 	if (gl_apid >= 0)
 	{
 		appl_exit();
@@ -315,6 +353,9 @@ static void win_exit(void)
 	}
 }
 
+/******************************************************************************/
+/*** ---------------------------------------------------------------------- ***/
+/******************************************************************************/
 
 static void control(void)
 {
@@ -322,6 +363,7 @@ static void control(void)
 	wind_update(BEG_MCTRL);
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void uncontrol(void)
 {
@@ -329,6 +371,7 @@ static void uncontrol(void)
 	wind_update(END_UPDATE);
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void select_snaptype(OBJECT *tree, _WORD type)
 {
@@ -339,30 +382,156 @@ static void select_snaptype(OBJECT *tree, _WORD type)
 	tree[type].ob_state |= OS_SELECTED;
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
-static _WORD run_dialog(OBJECT *tree)
+static void enable_truecolor(OBJECT *tree, _WORD type)
+{
+	tree[FORCE_TRUECOLOR].ob_state |= OS_DISABLED;
+	if (vdi_planes == 8 &&
+		(converters[type].converter->input_flags & (CONV_24BPP)))
+		tree[FORCE_TRUECOLOR].ob_state &= ~OS_DISABLED;
+}
+
+static void select_truecolor(OBJECT *tree)
+{
+	tree[FORCE_TRUECOLOR].ob_state &= ~OS_SELECTED;
+	if (force_24bit)
+		tree[FORCE_TRUECOLOR].ob_state |= OS_SELECTED;
+}
+
+static void select_filetype(OBJECT *tree, _WORD type)
+{
+	_WORD i;
+	
+	for (i = 0; i < ArraySize(converters); i++)
+	{
+		if (converters[i].obj > 0)
+		{
+			tree[converters[i].obj].ob_state &= ~OS_SELECTED;
+			tree[converters[i].obj].ob_state |= OS_DISABLED;
+			switch (vdi_planes)
+			{
+			case 1:
+				if (converters[i].converter->input_flags & CONV_1BPP)
+					tree[converters[i].obj].ob_state &= ~OS_DISABLED;
+				break;
+			case 2:
+				if (converters[i].converter->input_flags & CONV_2BPP)
+					tree[converters[i].obj].ob_state &= ~OS_DISABLED;
+				break;
+			case 3:
+			case 4:
+				if (converters[i].converter->input_flags & CONV_4BPP)
+					tree[converters[i].obj].ob_state &= ~OS_DISABLED;
+				break;
+			case 5:
+			case 6:
+			case 7:
+			case 8:
+				if ((converters[i].converter->input_flags & (CONV_8BPP|CONV_CHUNKY)) ||
+					(force_24bit && (converters[i].converter->input_flags & CONV_24BPP)))
+					tree[converters[i].obj].ob_state &= ~OS_DISABLED;
+				break;
+			case 15:
+				if (converters[i].converter->input_flags & CONV_15BPP)
+					tree[converters[i].obj].ob_state &= ~OS_DISABLED;
+				break;
+			case 16:
+				if (converters[i].converter->input_flags & CONV_16BPP)
+					tree[converters[i].obj].ob_state &= ~OS_DISABLED;
+				break;
+			case 24:
+				if (converters[i].converter->input_flags & CONV_24BPP)
+					tree[converters[i].obj].ob_state &= ~OS_DISABLED;
+				break;
+			case 32:
+				if (converters[i].converter->input_flags & CONV_32BPP)
+					tree[converters[i].obj].ob_state &= ~OS_DISABLED;
+				break;
+			}
+		}
+	}
+	tree[converters[type].obj].ob_state |= OS_SELECTED;
+
+	enable_truecolor(tree, type);
+	select_truecolor(tree);
+}
+
+/*** ---------------------------------------------------------------------- ***/
+
+static void get_filetype(OBJECT *tree)
+{
+	_WORD i;
+	
+	file_type = FT_NONE;
+	for (i = 0; i < ArraySize(converters); i++)
+	{
+		if (converters[i].obj > 0)
+		{
+			if ((tree[converters[i].obj].ob_state & OS_SELECTED) &&
+				!(tree[converters[i].obj].ob_state & OS_DISABLED))
+			{
+				file_type = i;
+				return;
+			}
+		}
+	}
+	force_24bit = (tree[FORCE_TRUECOLOR].ob_state & OS_SELECTED) &&
+		!(tree[FORCE_TRUECOLOR].ob_state & OS_DISABLED);
+}
+
+/*** ---------------------------------------------------------------------- ***/
+
+static void get_snaptype(OBJECT *tree)
+{
+	if (tree[SNAP_SCREEN].ob_state & OS_SELECTED)
+	{
+		snap_type = SNAP_SCREEN;
+		snap = screen;
+	} else if (tree[SNAP_TOP_CURR].ob_state & OS_SELECTED)
+	{
+		snap_type = SNAP_TOP_CURR;
+		snap = desk;
+	} else if (tree[SNAP_TOP_WORK].ob_state & OS_SELECTED)
+	{
+		snap_type = SNAP_TOP_WORK;
+		snap = desk;
+	} else if (tree[SNAP_RUBBER].ob_state & OS_SELECTED)
+	{
+		snap_type = SNAP_RUBBER;
+		snap = desk;
+	}
+}
+
+/*** ---------------------------------------------------------------------- ***/
+
+static _WORD run_dialog(OBJECT *tree, void (*check)(OBJECT *tree, _WORD obj, GRECT *gr))
 {
 	GRECT gr;
-	_WORD obj;
+	_WORD obj, ret;
 	
 	draw_dialog(tree, &gr);
 	do {
-		obj = form_do(tree, ROOT);
-		obj &= 0x7fff;
+		ret = form_do(tree, ROOT);
+		obj = ret & 0x7fff;
+		if ((tree[obj].ob_flags & (OF_TOUCHEXIT|OF_EXIT)) && check)
+			check(tree, obj, &gr);
 	} while (!(tree[obj].ob_flags & OF_EXIT));
 	undraw_dialog(tree, &gr);
 	tree[obj].ob_state &= ~OS_SELECTED;
 	return obj;
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void show_about(void)
 {
 	OBJECT *tree = rs_trindex[ABOUT_DIALOG];
 	
-	run_dialog(tree);
+	run_dialog(tree, 0);
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void get_snapdir(void)
 {
@@ -377,12 +546,27 @@ static void get_snapdir(void)
 		strcat(snap_dir, "\\");
 }
 
+/******************************************************************************/
+/*** ---------------------------------------------------------------------- ***/
+/******************************************************************************/
+
+static unsigned char vdi_to_rgb(_WORD col)
+{
+	unsigned long color;
+	
+	if (col < 0)
+		col = 0;
+	else if (col > 1000)
+		col = 1000;
+	color = col;
+	return (unsigned char)((color * 25599u) / 100000lu);
+}
+
 
 static void get_colors(void)
 {
 	_WORD i, colors;
 	_WORD color[3];
-	unsigned long col;
 	_WORD idx;
 	
 	if (vdi_planes > 8)
@@ -406,18 +590,17 @@ static void get_colors(void)
 			break;
 		}
 		vq_color(vdi_handle, idx, 0, color);
-		palette[i][0] = color[0];
-		palette[i][1] = color[1];
-		palette[i][2] = color[2];
-		col = color[0];
-		rgb_palette[i].r = (unsigned char)((col * 25599u) / 100000lu);
-		col = color[1];
-		rgb_palette[i].g = (unsigned char)((col * 25599u) / 100000lu);
-		col = color[2];
-		rgb_palette[i].b = (unsigned char)((col * 25599u) / 100000lu);
+		vdi_palette[i][0] = color[0];
+		vdi_palette[i][1] = color[1];
+		vdi_palette[i][2] = color[2];
+		vdi_palette[i][3] = idx;
+		rgb_palette[i].r = vdi_to_rgb(color[0]);
+		rgb_palette[i].g = vdi_to_rgb(color[1]);
+		rgb_palette[i].b = vdi_to_rgb(color[2]);
 	}
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static _BOOL f_exists(const char *filename)
 {
@@ -432,6 +615,7 @@ static _BOOL f_exists(const char *filename)
 	return ret;
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static _BOOL next_snap_num(void)
 {
@@ -444,7 +628,7 @@ static _BOOL next_snap_num(void)
 	
 	if (file_type == FT_NONE)
 		return FALSE;
-	ext = converters[file_type]->ext;
+	ext = converters[file_type].converter->ext;
 	
 	for (;;)
 	{
@@ -502,6 +686,7 @@ static _BOOL next_snap_num(void)
 	return ret;
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void write_snapshot(void)
 {
@@ -516,21 +701,30 @@ static void write_snapshot(void)
 	_WORD fd;
 	_WORD pxy[8];
 	const void *pal;
+	_BOOL force_conv = FALSE;
 	
 	mem_fdb.fd_w = snap.g_w;
 	mem_fdb.fd_h = snap.g_h;
 	mem_fdb.fd_wdwidth = (mem_fdb.fd_w + 15) >> 4;
 	
-	if (force_24bit)
+	if (force_24bit || (chunky_mode && !(converters[file_type].converter->input_flags & CONV_8BPP)))
 	{
 		mem_fdb.fd_stand = 1;
-		mem_fdb.fd_nplanes = 24;
-		line_len = mem_fdb.fd_wdwidth * (24 << 1);
+		force_conv = TRUE;
+		if (vdi_planes == 8 && (converters[file_type].converter->input_flags & CONV_CHUNKY))
+		{
+			mem_fdb.fd_nplanes = 8;
+			line_len = ulmul(mem_fdb.fd_wdwidth << 1, 8);
+		} else
+		{
+			mem_fdb.fd_nplanes = 24;
+			line_len = ulmul(mem_fdb.fd_wdwidth << 1, 24);
+		}
 	} else
 	{
 		mem_fdb.fd_stand = 0;
 		mem_fdb.fd_nplanes = vdi_planes;
-		line_len = mem_fdb.fd_wdwidth * (vdi_planes << 1);
+		line_len = ulmul(mem_fdb.fd_wdwidth << 1, vdi_planes);
 	}
 	snap_size = line_len * snap.g_h;
 	
@@ -553,7 +747,7 @@ static void write_snapshot(void)
 	
 	v_hide_c(vdi_handle);
 	
-	if (force_24bit)
+	if (force_conv)
 	{
 		_WORD pel, idx;
 		
@@ -565,9 +759,15 @@ static void write_snapshot(void)
 			{
 				v_get_pixel(vdi_handle, snap.g_x + x, snap.g_y + y, &pel, &idx);
 				pel &= 0xff;
-				*snap_ptr++ = rgb_palette[pel].r;
-				*snap_ptr++ = rgb_palette[pel].g;
-				*snap_ptr++ = rgb_palette[pel].b;
+				if (mem_fdb.fd_nplanes == 8)
+				{
+					*snap_ptr++ = pel;
+				} else
+				{
+					*snap_ptr++ = rgb_palette[pel].r;
+					*snap_ptr++ = rgb_palette[pel].g;
+					*snap_ptr++ = rgb_palette[pel].b;
+				}
 			}
 		}
 	} else
@@ -610,14 +810,15 @@ static void write_snapshot(void)
 	
 	graf_mouse(BUSY_BEE, NULL);
 
-	pal = converters[file_type]->flags & CONV_RGB_PALETTE ? (const void *)rgb_palette : (const void *)palette;
-	work_size = converters[file_type]->estimate_size(&mem_fdb, pal);
+	pal = converters[file_type].converter->input_flags & CONV_RGB_PALETTE ? (const void *)rgb_palette : (const void *)vdi_palette;
+	work_size = converters[file_type].converter->estimate_size(&mem_fdb, pal);
 	work_mem = NULL;
 	if (work_size > 0)
 	{
 		work_mem = Malloc(work_size);
 		if (work_mem == NULL)
 		{
+			Mfree(snap_mem);
 			graf_mouse(ARROW, NULL);
 			form_alert(1, rs_frstr[AL_NOMEM]);
 			return;
@@ -631,8 +832,8 @@ static void write_snapshot(void)
 		form_alert(1, rs_frstr[AL_WRITEFILE]);
 	} else
 	{
-		mem_fdb.fd_r1 = fd;
-		work_size = converters[file_type]->write_file(&mem_fdb, pal, work_mem);
+		OUT_FD(&mem_fdb) = fd;
+		work_size = converters[file_type].converter->write_file(&mem_fdb, pal, work_mem);
 		if (work_size < 0)
 		{
 			graf_mouse(ARROW, NULL);
@@ -647,17 +848,80 @@ static void write_snapshot(void)
 	graf_mouse(ARROW, NULL);
 }
 
+/******************************************************************************/
+/*** ---------------------------------------------------------------------- ***/
+/******************************************************************************/
+
+static void objc_grect(OBJECT *tree, _WORD obj, GRECT *gr)
+{
+	GRECT o;
+	_WORD x, y;
+	_WORD xdiff, ydiff;
+	
+	x = tree[obj].ob_x;
+	y = tree[obj].ob_y;
+	objc_offset(tree, obj, &gr->g_x, &gr->g_y);
+	form_center_grect(&tree[obj], &o);
+	xdiff = o.g_x - tree[obj].ob_x;
+	ydiff = o.g_y - tree[obj].ob_y;
+	gr->g_x += xdiff;
+	gr->g_y += ydiff;
+	gr->g_w = o.g_w;
+	gr->g_h = o.g_h;
+	tree[obj].ob_x = x;
+	tree[obj].ob_y = y;
+}
+
+static void check_filetype(OBJECT *tree, _WORD obj, GRECT *gr)
+{
+	GRECT redraw;
+	
+	UNUSED(gr);
+	
+	switch (obj)
+	{
+	case O_IMG:
+	case O_GIF:
+	case O_TGA16:
+	case O_TGA24:
+	case O_PNG:
+		get_filetype(tree);
+		enable_truecolor(tree, file_type);
+		force_24bit =
+			(!(tree[FORCE_TRUECOLOR].ob_state & OS_DISABLED)) &&
+			(vdi_planes == 8 &&
+			 !(converters[file_type].converter->output_flags & (CONV_8BPP|CONV_CHUNKY)));
+		select_truecolor(tree);
+		objc_grect(tree, FORCE_TRUECOLOR, &redraw);
+		objc_draw_grect(tree, ROOT, MAX_DEPTH, &redraw);
+		break;
+	case FORCE_TRUECOLOR:
+		force_24bit =
+			(!(tree[FORCE_TRUECOLOR].ob_state & OS_DISABLED)) &&
+			((tree[FORCE_TRUECOLOR].ob_state & OS_SELECTED) ||
+			 (vdi_planes == 8 &&
+			  !(converters[file_type].converter->output_flags & (CONV_8BPP|CONV_CHUNKY))));
+		select_truecolor(tree);
+		objc_grect(tree, FORCE_TRUECOLOR, &redraw);
+		objc_draw_grect(tree, ROOT, MAX_DEPTH, &redraw);
+		break;
+	}
+}
+
 
 static void run_snapit(void)
 {
 	OBJECT *tree = rs_trindex[SNAP_DIALOG];
 	_WORD obj;
 	char *delaystr;
+	_WORD prevtop;
 	
+	wind_get_int(DESK, WF_TOP, &prevtop);
 	delaystr = tree[SNAP_DELAY].ob_spec.tedinfo->te_ptext;
 	sprintf(delaystr, "%u", snap_delay);
 	select_snaptype(tree, snap_type);
-	obj = run_dialog(tree);
+	select_filetype(tree, file_type);
+	obj = run_dialog(tree, check_filetype);
 	
 	if (obj == SNAP_HELP)
 	{
@@ -668,10 +932,11 @@ static void run_snapit(void)
 		_WORD button, state;
 		
 		snap_delay = (_UWORD)strtoul(delaystr, NULL, 0);
-		if (tree[SNAP_SCREEN].ob_state & OS_SELECTED)
+		get_snaptype(tree);
+		get_filetype(tree);
+		switch (snap_type)
 		{
-			snap_type = SNAP_SCREEN;
-			snap = screen;
+		case SNAP_SCREEN:
 			/*
 			 * give other programs time to process WM_REDRAW
 			 * messages resulting from FMD_FINISH
@@ -679,10 +944,20 @@ static void run_snapit(void)
 			uncontrol();
 			evnt_timer(snap_delay * 1000L);
 			control();
-		} else if (tree[SNAP_TOP_CURR].ob_state & OS_SELECTED)
-		{
-			snap_type = SNAP_TOP_CURR;
-			snap = desk;
+			break;
+		case SNAP_TOP_CURR:
+			/*
+			 * some MultiTask AES (like XaAES)
+			 * untop the current application when an ACC
+			 * is invoked.
+			 * FIXME: does not work, either: prevtop is already 0
+			 */
+			wind_get_int(DESK, WF_TOP, &top);
+			if (top == 0 && prevtop != 0)
+			{
+				wind_set_int(prevtop, WF_TOP, 0);
+				top = prevtop;
+			}
 			/*
 			 * give other programs time to process WM_REDRAW
 			 * messages resulting from FMD_FINISH,
@@ -693,10 +968,20 @@ static void run_snapit(void)
 			control();
 			wind_get_int(DESK, WF_TOP, &top);
 			wind_get_grect(top, WF_CURRXYWH, &snap);
-		} else if (tree[SNAP_TOP_WORK].ob_state & OS_SELECTED)
-		{
-			snap_type = SNAP_TOP_WORK;
-			snap = desk;
+			break;
+		case SNAP_TOP_WORK:
+			/*
+			 * some MultiTask AES (like XaAES)
+			 * untop the current application when an ACC
+			 * is invoked.
+			 * FIXME: does not work, either: prevtop is already 0
+			 */
+			wind_get_int(DESK, WF_TOP, &top);
+			if (top == 0 && prevtop != 0)
+			{
+				wind_set_int(prevtop, WF_TOP, 0);
+				top = prevtop;
+			}
 			/*
 			 * give other programs time to process WM_REDRAW
 			 * messages resulting from FMD_FINISH,
@@ -707,13 +992,17 @@ static void run_snapit(void)
 			control();
 			wind_get_int(DESK, WF_TOP, &top);
 			wind_get_grect(top, WF_WORKXYWH, &snap);
-		} else if (tree[SNAP_RUBBER].ob_state & OS_SELECTED)
-		{
-			snap_type = SNAP_RUBBER;
-			snap = desk;
+			break;
+		case SNAP_RUBBER:
 			graf_mouse(OUTLN_CROSS, NULL);
 			do
 			{
+				evnt_button(1, 1, 0, &snap.g_x, &snap.g_y, &button, &state);
+				graf_mkstate(&snap.g_x, &snap.g_y, &button, &state);
+			} while ((button & 1));
+			do
+			{
+				evnt_button(1, 1, 1, &snap.g_x, &snap.g_y, &button, &state);
 				graf_mkstate(&snap.g_x, &snap.g_y, &button, &state);
 			} while (!(button & 1));
 			graf_mouse(POINT_HAND, NULL);
@@ -729,6 +1018,7 @@ static void run_snapit(void)
 				snap.g_y += snap.g_h;
 				snap.g_h = -snap.g_h;
 			}
+			break;
 		}
 		
 		if (rc_intersect(&screen, &snap))
@@ -738,6 +1028,7 @@ static void run_snapit(void)
 	}
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void snapit(void)
 {
@@ -754,6 +1045,7 @@ static void snapit(void)
 	uncontrol();
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 static void event_loop(void)
 {
@@ -770,13 +1062,20 @@ static void event_loop(void)
 			break;
 		case AC_CLOSE:
 			free_mem();
+			/*
+			 * Assumes that we normally won't get AC_CLOSE
+			 * from multi-tasking AES; if we do,
+			 * assume that we can safely terminate
+			 */
 			if (!_app && msg[4] == menu_id && _AESnumapps != 1)
-			{
 				return;
-			}
 			break;
 		case AP_TERM:
 			free_mem();
+			/*
+			 * Assumes that we can safely terminate an ACC
+			 * in multi-tasking AES
+			 */
 			if (_app || _AESnumapps != 1)
 				return;
 			break;
@@ -784,6 +1083,7 @@ static void event_loop(void)
 	}
 }
 
+/*** ---------------------------------------------------------------------- ***/
 
 int main(void)
 {
@@ -799,7 +1099,6 @@ int main(void)
 			event_loop();
 		}
 	}
-	free_mem();
 	win_exit();
 	return 0;
 }

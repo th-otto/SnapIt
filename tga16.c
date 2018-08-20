@@ -24,8 +24,7 @@ static long tga16_write_file(const MFDB *pic, const void *palette, void *mem)
 	const unsigned char *inptr, *instart;
 	_WORD x, y;
 	_WORD planes;
-	
-	UNUSED(palette);
+	const struct rgb *pal = (const struct rgb *)palette;
 	
 	outstart = outptr;
 	
@@ -63,6 +62,14 @@ static long tga16_write_file(const MFDB *pic, const void *palette, void *mem)
 		{
 			switch (pic->fd_nplanes)
 			{
+			case 8:
+				/* only chunky supported here */
+				{
+					unsigned char c = *inptr++;
+					*outptr++ = ((pal[c].b & 0xf8) >> 3) | ((pal[c].g & 0x38) << 2);
+					*outptr++ = ((pal[c].r & 0xf8) >> 1) | ((pal[c].g & 0xc0) >> 6);
+				}
+				break;
 			case 15:
 			case 16:
 				/* input:  RRRRRGGG GGGBBBBB */
@@ -77,8 +84,9 @@ static long tga16_write_file(const MFDB *pic, const void *palette, void *mem)
 			case 24:
 				/* input:  RRRRR000 GGGGGG00 BBBBB000 */
 				/* output: ARRRRRGG GGGBBBBB */
-				outptr[0] = ((inptr[2] & 0xf8) >> 3) | ((inptr[1] & 0x38) << 2);
-				outptr[1] = ((inptr[0] & 0xf8) >> 1) | ((inptr[1] & 0xc0) >> 6);
+				*outptr++ = ((inptr[2] & 0xf8) >> 3) | ((inptr[1] & 0x38) << 2);
+				*outptr++ = ((inptr[0] & 0xf8) >> 1) | ((inptr[1] & 0xc0) >> 6);
+				inptr += 3;
 				break;
 			default:
 				return -1;
@@ -86,7 +94,7 @@ static long tga16_write_file(const MFDB *pic, const void *palette, void *mem)
 			out_size += 2;
 			if (out_size >= (WORK_SIZE - 100))
 			{
-				if (Fwrite(pic->fd_r1, out_size, outstart) != out_size)
+				if (Fwrite(OUT_FD(pic), out_size, outstart) != out_size)
 					return -1;
 				outptr = outstart;
 				out_size = 0;
@@ -95,10 +103,17 @@ static long tga16_write_file(const MFDB *pic, const void *palette, void *mem)
 		instart += linesize;
 	}
 	
-	if (out_size > 0 && Fwrite(pic->fd_r1, out_size, outstart) != out_size)
+	if (out_size > 0 && Fwrite(OUT_FD(pic), out_size, outstart) != out_size)
 		return -1;
 	
 	return 0;
 }
 
-struct converter const tga16_converter = { "tga", 0, tga16_estimate_size, tga16_write_file };
+struct converter const tga16_converter = {
+	"TGA (hicolor)",
+	"tga",
+	CONV_15BPP|CONV_16BPP|CONV_24BPP|CONV_32BPP|CONV_RGB_PALETTE|CONV_CHUNKY,
+	CONV_16BPP,
+	tga16_estimate_size,
+	tga16_write_file
+};
