@@ -370,15 +370,15 @@ static TEDINFO rs_tedinfo[NUM_TI] = {
 static OBJECT rs_object[NUM_OBS] = {
 /* ABOUT_DIALOG */
 
-	{ -1, 1, 8, G_BOX, OF_FL3DBAK, OS_OUTLINED, C_UNION(0x21180L), 0,0, 47,14 },
-	{ 2, -1, -1, G_BOXTEXT, OF_FL3DACT, OS_NORMAL, C_UNION(&rs_tedinfo[0]), 14,1, 20,1 },
-	{ 3, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_3), 11,4, 25,1 },
-	{ 4, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_4), 18,5, 11,1 },
-	{ 5, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_5), 14,8, 19,1 },
-	{ 6, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_6), 14,9, 19,1 },
-	{ 7, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_7), 14,10, 20,1 },
-	{ 8, -1, -1, G_BUTTON, 0x607, OS_WHITEBAK, C_UNION(snapit_string_8), 20,12, 8,1 },
-	{ 0, -1, -1, G_STRING, 0x620, OS_NORMAL, C_UNION(snapit_string_9), 18,2, 11,1 },
+	{ -1, 1, 8, G_BOX, OF_FL3DBAK, OS_OUTLINED, C_UNION(0x21180L), 0,0, 32,13 },
+	{ 2, -1, -1, G_BOXTEXT, OF_FL3DACT, OS_NORMAL, C_UNION(&rs_tedinfo[0]), 6,1, 20,1 },
+	{ 3, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_3), 4,4, 25,1 },
+	{ 4, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_4), 11,5, 11,1 },
+	{ 5, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_5), 7,7, 19,1 },
+	{ 6, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_6), 7,8, 19,1 },
+	{ 7, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_7), 6,9, 20,1 },
+	{ 8, -1, -1, G_BUTTON, 0x607, OS_WHITEBAK, C_UNION(snapit_string_8), 12,11, 8,1 },
+	{ 0, -1, -1, G_STRING, 0x620, OS_NORMAL, C_UNION(snapit_string_9), 11,2, 11,1 },
 
 /* SNAP_DIALOG */
 
