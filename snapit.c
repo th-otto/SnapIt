@@ -715,7 +715,7 @@ static void write_snapshot(void)
 	
 	if (force_24bit ||
 		(vdi_planes == 8 && !(converters[file_type].converter->input_flags & CONV_8BPP)) ||
-		(chunky_mode && !(converters[file_type].converter->input_flags & CONV_CHUNKY)))
+		chunky_mode)
 	{
 		mem_fdb.fd_stand = 1;
 		force_conv = TRUE;
@@ -759,6 +759,9 @@ static void write_snapshot(void)
 	{
 		_WORD pel, idx;
 		
+		/*
+		 * FIXME: in chunky mode, we should be able to use vr_trnfm here
+		 */
 		for (y = 0; y < snap.g_h; y++)
 		{
 			snap_ptr = snap_mem + line_len * y;

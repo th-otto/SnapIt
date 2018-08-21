@@ -190,51 +190,19 @@ struct gif_dest
 	 * block compression parameters -- after all codes are used up,
 	 * and compression rate changes, start over.
 	 */
-	int clear_flg;
+	short clear_flg;
 
 	long int in_count;					/* length of input */
 	long int out_count;					/* # of codes output (for debugging) */
 
 	const MFDB *pic;
+	short chunky;
 	const struct rgb *pi_palette;
 	const unsigned char *coltab;
 	const unsigned char *revtab;
 	const unsigned char *pixels;
 };
 
-
-
-struct gif89
-{
-	int transparent;
-	int delayTime;
-	int inputFlag;
-	int disposal;
-};
-
-
-struct getCodeState
-{
-	unsigned char buf[280];
-	/* This is the buffer through which we read the data from the 
-	   stream.  We must buffer it because we have to read whole data
-	   blocks at a time, but our client wants one code at a time.
-	   The buffer typically contains the contents of one data block
-	   plus two bytes from the previous data block.
-	 */
-	int bufCount;
-	/* This is the number of bytes of contents in buf[]. */
-	int curbit;
-	/* The bit number (starting at 0) within buf[] of the next bit
-	   to be returned.  If the next bit to be returned is not yet in
-	   buf[] (we've already returned everything in there), this points
-	   one beyond the end of the buffer contents.
-	 */
-	int streamExhausted;
-	/* The last time we read from the input stream, we got an EOD marker
-	   or EOF
-	 */
-};
 
 
 struct stack
@@ -384,17 +352,24 @@ static __inline int GifGetPixel(struct gif_dest *gif, int x, int y)
 		color = gif->revtab[color];
 		break;
 	case 8:
-		pos += (x >> 4) << 4;
-		if (x & 0x08)
-			pos++;
-		if (pos[ 0] & mask) color |= 0x01;
-		if (pos[ 2] & mask) color |= 0x02;
-		if (pos[ 4] & mask) color |= 0x04;
-		if (pos[ 6] & mask) color |= 0x08;
-		if (pos[ 8] & mask) color |= 0x10;
-		if (pos[10] & mask) color |= 0x20;
-		if (pos[12] & mask) color |= 0x40;
-		if (pos[14] & mask) color |= 0x80;
+		if (gif->chunky)
+		{
+			pos += x;
+			color = *pos;
+		} else
+		{
+			pos += (x >> 4) << 4;
+			if (x & 0x08)
+				pos++;
+			if (pos[ 0] & mask) color |= 0x01;
+			if (pos[ 2] & mask) color |= 0x02;
+			if (pos[ 4] & mask) color |= 0x04;
+			if (pos[ 6] & mask) color |= 0x08;
+			if (pos[ 8] & mask) color |= 0x10;
+			if (pos[10] & mask) color |= 0x20;
+			if (pos[12] & mask) color |= 0x40;
+			if (pos[14] & mask) color |= 0x80;
+		}
 		color = gif->revtab[color];
 		break;
 	}
@@ -1151,6 +1126,7 @@ static long gif_write_file(const MFDB *pic, const void *palette, void *mem)
 		pic->fd_nplanes == 4 ? bmp_revtab4 :
 		bmp_revtab8;
 	gif->pi_palette = palette;
+	gif->chunky = pic->fd_stand;
 	
 	/* Set some global variables for bumpPixel() */
 	initPixelCursor(&gif->pixelCursor, gif->width, gif->height, FALSE);
@@ -1181,8 +1157,8 @@ static long gif_estimate_size(const MFDB *pic, const void *palette)
 struct converter const gif_converter = {
 	"GIF",
 	"gif",
-	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP|CONV_RGB_PALETTE,
-	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP,
+	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP|CONV_CHUNKY|CONV_RGB_PALETTE,
+	CONV_CHUNKY,
 	gif_estimate_size,
 	gif_write_file,
 	0
