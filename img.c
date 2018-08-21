@@ -448,5 +448,6 @@ struct converter const img_converter = {
 	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP,
 	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP,
 	img_estimate_size,
-	img_write_file
+	img_write_file,
+	0
 };

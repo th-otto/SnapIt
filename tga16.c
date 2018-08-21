@@ -115,5 +115,6 @@ struct converter const tga16_converter = {
 	CONV_15BPP|CONV_16BPP|CONV_24BPP|CONV_32BPP|CONV_RGB_PALETTE|CONV_CHUNKY,
 	CONV_16BPP,
 	tga16_estimate_size,
-	tga16_write_file
+	tga16_write_file,
+	0
 };

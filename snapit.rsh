@@ -396,7 +396,7 @@ static OBJECT rs_object[NUM_OBS] = {
 	{ 12, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_18), 0,2, 10,1 }, /* O_TGA16 */
 	{ 13, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_19), 0,3, 10,1 }, /* O_TGA24 */
 	{ 8, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_20), 0,4, 10,1 }, /* O_PNG */
-	{ 15, -1, -1, G_FTEXT, 0x408, OS_NORMAL, C_UNION(&rs_tedinfo[1]), 1,8, 18,1 }, /* SNAP_DELAY */
+	{ 15, -1, -1, G_FTEXT, 0x480, OS_NORMAL, C_UNION(&rs_tedinfo[1]), 1,8, 18,1 }, /* SNAP_DELAY */
 	{ 16, -1, -1, G_BUTTON, 0x441, 0xFC40, C_UNION(snapit_string_24), 21,8, 17,1 }, /* FORCE_TRUECOLOR */
 	{ 17, -1, -1, G_BUTTON, 0x605, OS_NORMAL, C_UNION(snapit_string_25), 1,10, 8,1 }, /* SNAP_HELP */
 	{ 18, -1, -1, G_BUTTON, 0x607, OS_WHITEBAK, C_UNION(snapit_string_26), 16,10, 8,1 }, /* SNAP_OK */

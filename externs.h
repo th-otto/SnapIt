@@ -78,6 +78,7 @@ struct converter {
 	unsigned long output_flags;
 	long (*estimate_size)(const MFDB *pic, const void *palette);
 	long (*write_file)(const MFDB *pic, const void *palette, void *mem);
+	void (*free_mem)(void);
 };
 
 #define CONV_1BPP        0x00000001UL
@@ -92,6 +93,7 @@ struct converter {
 #define CONV_RGB_PALETTE 0x00010000UL
 
 #define OUT_FD(pic) ((pic)->fd_r1)
+#define OUT_FORCE_TRUECOLOR(pic) ((pic)->fd_r2)
 
-
-int Cookie_ReadJar(unsigned long id, long *value);
+extern unsigned char const rgb5tab[32];
+extern unsigned char const rgb6tab[64];

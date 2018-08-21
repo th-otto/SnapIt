@@ -365,6 +365,14 @@ static __inline int GifGetPixel(struct gif_dest *gif, int x, int y)
 		if (!(*pos & mask))
 			color = 1;
 		break;
+	case 2:
+		pos += (x >> 4) << 2;
+		if (x & 0x08)
+			pos++;
+		if (pos[0] & mask) color |= 0x01;
+		if (pos[2] & mask) color |= 0x02;
+		color = gif->revtab[color];
+		break;
 	case 4:
 		pos += (x >> 4) << 3;
 		if (x & 0x08)
@@ -1134,8 +1142,14 @@ static long gif_write_file(const MFDB *pic, const void *palette, void *mem)
 	gif->width = pic->fd_w;
 	gif->height = pic->fd_h;
 	gif->pixels = (const unsigned char *)pic->fd_addr;
-	gif->coltab = pic->fd_nplanes == 4 ? bmp_coltab4 : bmp_coltab8;
-	gif->revtab = pic->fd_nplanes == 4 ? bmp_revtab4 : bmp_revtab8;
+	gif->coltab =
+		pic->fd_nplanes == 2 ? bmp_coltab4 :
+		pic->fd_nplanes == 4 ? bmp_coltab4 :
+		bmp_coltab8;
+	gif->revtab =
+		pic->fd_nplanes == 2 ? bmp_revtab4 :
+		pic->fd_nplanes == 4 ? bmp_revtab4 :
+		bmp_revtab8;
 	gif->pi_palette = palette;
 	
 	/* Set some global variables for bumpPixel() */
@@ -1168,7 +1182,8 @@ struct converter const gif_converter = {
 	"GIF",
 	"gif",
 	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP|CONV_RGB_PALETTE,
-	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP|CONV_RGB_PALETTE,
+	CONV_1BPP|CONV_2BPP|CONV_4BPP|CONV_8BPP,
 	gif_estimate_size,
-	gif_write_file
+	gif_write_file,
+	0
 };

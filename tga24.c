@@ -6,7 +6,6 @@
 #define TGA_HEAD_SIZE 18
 #define WORK_SIZE 16000L
 
-
 static long tga24_estimate_size(const MFDB *pic, const void *palette)
 {
 	UNUSED(pic);
@@ -75,9 +74,9 @@ static long tga24_write_file(const MFDB *pic, const void *palette, void *mem)
 			case 16:
 				/* input:  RRRRRGGG GGGBBBBB */
 				/* output: BBBBB000 GGGGGG00 RRRRR000 */
-				outptr[2] = inptr[0] & 0xf8;
-				outptr[0] = (inptr[1] & 0x1f) << 3;
-				outptr[1] = (inptr[1] >> 3) | ((inptr[0] & 0x07) << 5);
+				*outptr++ = rgb5tab[inptr[1] & 0x1f];
+				*outptr++ = rgb6tab[(inptr[1] >> 5) | ((inptr[0] & 0x07) << 3)];
+				*outptr++ = rgb5tab[(inptr[0] >> 3) & 0x1f];
 				inptr += 2;
 				outptr += 3;
 				break;
@@ -117,5 +116,6 @@ struct converter const tga24_converter = {
 	CONV_15BPP|CONV_16BPP|CONV_24BPP|CONV_32BPP|CONV_RGB_PALETTE|CONV_CHUNKY,
 	CONV_24BPP,
 	tga24_estimate_size,
-	tga24_write_file
+	tga24_write_file,
+	0
 };

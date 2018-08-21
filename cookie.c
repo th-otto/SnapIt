@@ -1,7 +1,8 @@
 #include <gem.h>
 #include <stddef.h>
 #include <mint/mintbind.h>
-#include <mint/cookie.h>
+#include "cookie.h"
+
 
 #include "externs.h"
 
@@ -38,16 +39,16 @@ static COOKIE *SearchJar(unsigned long id)
 		{
 			if (p->cookie.end == 0)
 				return NULL;
-			else if (p->cookie.id == id)
+			if (p->cookie.id == id)
 				break;
-			else
-				p++;
+			p++;
 		}
 	}
 	return p;
 }
 
-int Cookie_ReadJar(unsigned long id, long *value)
+
+int Cookie_Find(unsigned long id, long *value)
 {
 	COOKIE *p;
 	

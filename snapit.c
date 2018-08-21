@@ -5,8 +5,8 @@
 #include <ctype.h>
 #include <limits.h>
 #include <mint/mintbind.h>
-#include <mint/cookie.h>
-#include <mint/arch/nf_ops.h>
+#include "cookie.h"
+
 
 #define RSC_NAMED_FUNCTIONS 1
 #define RSC_STATIC_FILE 1
@@ -133,7 +133,7 @@ static void *mxalloc(long amount, unsigned short mode)
 {
 	void *p = Mxalloc(amount, mode & Mxmask());
 	if (p == (void *)-32)
-		p = Malloc(amount);
+		p = (void *)Malloc(amount);
 	return p;
 }
 #endif
@@ -309,10 +309,10 @@ static _BOOL win_init(void)
 	aes_handle = graf_handle(&gl_wchar, &gl_hchar, &gl_wbox, &gl_hbox);
 	
 #if 0
-	if (Cookie_ReadJar(C_MiNT, &l) != FALSE)
+	if (Cookie_Find(C_MiNT, &l) != FALSE)
 		__mint = (_WORD)l;
 #endif
-	if (Cookie_ReadJar(C_MagX, &l) != FALSE)
+	if (Cookie_Find(C_MagX, &l) != FALSE)
 		__magix = ((short **)l)[2][24];
 
 	if (!_app)
@@ -338,6 +338,11 @@ static _BOOL win_init(void)
 
 static void free_mem(void)
 {
+	_WORD i;
+	
+	for (i = 0; i < ArraySize(converters); i++)
+		if (converters[i].converter && converters[i].converter->free_mem)
+			converters[i].converter->free_mem();
 }
 
 /*** ---------------------------------------------------------------------- ***/
@@ -706,8 +711,11 @@ static void write_snapshot(void)
 	mem_fdb.fd_w = snap.g_w;
 	mem_fdb.fd_h = snap.g_h;
 	mem_fdb.fd_wdwidth = (mem_fdb.fd_w + 15) >> 4;
+	OUT_FORCE_TRUECOLOR(&mem_fdb) = force_24bit;
 	
-	if (force_24bit || (chunky_mode && !(converters[file_type].converter->input_flags & CONV_8BPP)))
+	if (force_24bit ||
+		(vdi_planes == 8 && !(converters[file_type].converter->input_flags & CONV_8BPP)) ||
+		(chunky_mode && !(converters[file_type].converter->input_flags & CONV_CHUNKY)))
 	{
 		mem_fdb.fd_stand = 1;
 		force_conv = TRUE;
@@ -730,7 +738,7 @@ static void write_snapshot(void)
 	
 	get_colors();
 	
-	snap_mem = Malloc(snap_size);
+	snap_mem = (unsigned char *)Malloc(snap_size);
 	if (snap_mem == NULL)
 	{
 		form_alert(1, rs_frstr[AL_NOMEM]);
@@ -751,7 +759,6 @@ static void write_snapshot(void)
 	{
 		_WORD pel, idx;
 		
-		snap_ptr = snap_mem;
 		for (y = 0; y < snap.g_h; y++)
 		{
 			snap_ptr = snap_mem + line_len * y;
@@ -815,7 +822,7 @@ static void write_snapshot(void)
 	work_mem = NULL;
 	if (work_size > 0)
 	{
-		work_mem = Malloc(work_size);
+		work_mem = (unsigned char *)Malloc(work_size);
 		if (work_mem == NULL)
 		{
 			Mfree(snap_mem);
@@ -890,7 +897,7 @@ static void check_filetype(OBJECT *tree, _WORD obj, GRECT *gr)
 		force_24bit =
 			(!(tree[FORCE_TRUECOLOR].ob_state & OS_DISABLED)) &&
 			(vdi_planes == 8 &&
-			 !(converters[file_type].converter->output_flags & (CONV_8BPP|CONV_CHUNKY)));
+			 !(converters[file_type].converter->input_flags & (CONV_8BPP|CONV_CHUNKY)));
 		select_truecolor(tree);
 		objc_grect(tree, FORCE_TRUECOLOR, &redraw);
 		objc_draw_grect(tree, ROOT, MAX_DEPTH, &redraw);
@@ -900,7 +907,7 @@ static void check_filetype(OBJECT *tree, _WORD obj, GRECT *gr)
 			(!(tree[FORCE_TRUECOLOR].ob_state & OS_DISABLED)) &&
 			((tree[FORCE_TRUECOLOR].ob_state & OS_SELECTED) ||
 			 (vdi_planes == 8 &&
-			  !(converters[file_type].converter->output_flags & (CONV_8BPP|CONV_CHUNKY))));
+			  !(converters[file_type].converter->input_flags & (CONV_8BPP|CONV_CHUNKY))));
 		select_truecolor(tree);
 		objc_grect(tree, FORCE_TRUECOLOR, &redraw);
 		objc_draw_grect(tree, ROOT, MAX_DEPTH, &redraw);

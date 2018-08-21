@@ -1,5 +1,5 @@
-;c:\snapit.acc
-snapit.prg
+c:\snapit.acc
+;snapit.prg
 
 .C[-DZLIB_SLB=1]
 .C[-DPNGLIB_SLB=1]
@@ -36,10 +36,13 @@ tga24.c
 img.c
 gif.c
 png.c
+tab.c
 cookie.c
+malloc.c
 
 zlibslb.lib
 pngslb16.lib
+pcfltlib.lib
 pcstdlib.lib
 pcgemlib.lib
 pctoslib.lib
