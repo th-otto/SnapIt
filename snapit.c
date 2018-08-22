@@ -538,14 +538,84 @@ static void show_about(void)
 
 /*** ---------------------------------------------------------------------- ***/
 
+static int drive_from_letter(char c)
+{
+	if (c >= 'a' && c <= 'z')
+		return c - 'a';
+	if (c >= 'A' && c <= 'Z')
+		return c - 'A';
+	if (c >= '1' && c <= '6')
+		return c - '1' + 26;
+	return -1;
+}
+
+/*** ---------------------------------------------------------------------- ***/
+
+/* Special getenv for accessories.
+ * Get variables from system enviroment
+ * instead of the process one.
+ */
+static char *getaccenv(const char *var)
+{
+	char *string = NULL;
+
+	shel_envrn(&string, var);
+	if (string && *string)
+		return string;
+	return NULL;
+}
+
+/*** ---------------------------------------------------------------------- ***/
+
+static _BOOL f_exists(const char *filename, int attr)
+{
+	_DTA *olddta;
+	_DTA dta;
+	_BOOL ret;
+	
+	olddta = Fgetdta();
+	Fsetdta(&dta);
+	ret = Fsfirst(filename, attr) == 0;
+	Fsetdta(olddta);
+	return ret;
+}
+
+/*** ---------------------------------------------------------------------- ***/
+
 static void get_snapdir(void)
 {
-	int drv = Dgetdrv();
+	int drv;
 	size_t len;
-	
-	snap_dir[0] = drv >= 26 ? (drv - 26) + '1' : ('A' + drv);
-	snap_dir[1] = ':';
-	Dgetpath(&snap_dir[2], drv + 1);
+	const char *path;
+
+	/* where's the clipboard directory and does its drive exist */
+	if (_app)
+	{
+		path = getenv("CLIPBRD");
+		if (path == NULL)
+			path = getenv("SCRAPDIR");
+	} else
+	{
+		path = getaccenv("CLIPBRD=");
+		if (path == NULL)
+			path = getaccenv("SCRAPDIR=");
+	}
+	if (path &&
+		(drv = drive_from_letter(path[0])) >= 0 && 
+		(Drvmap() & (1L << drv)))
+	{
+		strncpy(snap_dir, path, sizeof(snap_dir) - 1);
+	} else
+	{
+		drv = Dgetdrv();
+		snap_dir[0] = drv >= 26 ? (drv - 26) + '1' : ('A' + drv);
+		snap_dir[1] = ':';
+		Dgetpath(&snap_dir[2], drv + 1);
+		if (snap_dir[2] == '\0')
+			strcat(snap_dir, "\\");
+		if (strcmp(&snap_dir[2], "\\") == 0 && f_exists("CLIPBRD", FA_DIR))
+			strcat(snap_dir, "CLIPBRD");
+	}
 	len = strlen(snap_dir);
 	if (snap_dir[len - 1] != '/' && snap_dir[len - 1] != '\\')
 		strcat(snap_dir, "\\");
@@ -607,21 +677,6 @@ static void get_colors(void)
 
 /*** ---------------------------------------------------------------------- ***/
 
-static _BOOL f_exists(const char *filename)
-{
-	_DTA *olddta;
-	_DTA dta;
-	_BOOL ret;
-	
-	olddta = Fgetdta();
-	Fsetdta(&dta);
-	ret = Fsfirst(filename, FA_RDONLY|FA_HIDDEN|FA_SYSTEM) == 0;
-	Fsetdta(olddta);
-	return ret;
-}
-
-/*** ---------------------------------------------------------------------- ***/
-
 static _BOOL next_snap_num(void)
 {
 	int start = snap_num;
@@ -638,7 +693,7 @@ static _BOOL next_snap_num(void)
 	for (;;)
 	{
 		sprintf(snap_filename, "%ssnap%03d.%s", snap_dir, snap_num, ext);
-		if (!f_exists(snap_filename))
+		if (!f_exists(snap_filename, FA_RDONLY|FA_HIDDEN|FA_SYSTEM))
 			break;
 		++snap_num;
 		if (snap_num >= 1000)
@@ -682,7 +737,7 @@ static _BOOL next_snap_num(void)
 		*end = '\0';
 		strcpy(snap_dir, snap_filename);
 		strcpy(end, name);
-		if (f_exists(snap_filename))
+		if (f_exists(snap_filename, FA_RDONLY|FA_HIDDEN|FA_SYSTEM))
 		{
 			if (form_alert(2, rs_frstr[AL_OVERWRITE]) != 1)
 				ret = FALSE;
