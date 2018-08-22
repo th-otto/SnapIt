@@ -41,6 +41,7 @@ allbindist:
 	cp -a $(SLB)/000/zlib.slb $(SLB)/000/pnglib16.slb $(DESTDIR)/000
 	cp -a $(ATARI_ROOT)/snapit.acc $(DESTDIR)/000
 	$(MAKE) clean
+	cp -a snapit.txt $(DESTDIR)
 	cd $(DESTDIR)/..; rm -f snapit.zip; zip -r snapit.zip `basename $(DESTDIR)`
 
 clean::
