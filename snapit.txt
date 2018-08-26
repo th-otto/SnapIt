@@ -1,6 +1,15 @@
-SnapIt - Snapshot toolSnapit is freeware that runs as accessory or program
+SnapIt - Snapshot tool
+
+Snapit is freeware that runs as accessory or program
 (although running as program in SingleTOS would only allow
-you to grab the background ;)It can generate screen snapshots in various formats:ú (X)IMG (Atari format, for 1-8 bitplanes)ú GIF (gif87a, for 1 to 8 bitplanes)ú TGA (uncompressed, for 15-32 bitplanes)ú PNG (all formats)
+you to grab the background ;)
+
+It can generate screen snapshots in various formats:
+ú (X)IMG (Atari format, for 1-8 bitplanes)
+ú GIF (gif87a, for 1 to 8 bitplanes)
+ú TGA (uncompressed, for 15-32 bitplanes)
+ú PNG (all formats)
+
 There are 3 versions available, in their corresponding subdirectories:
 000: for plain 68000 (ST/STe etc)
 020: for 68020 or better (TT/Falcon...)
@@ -13,7 +22,8 @@ or to C:\MINT\SLB for SingleTOS.
 
 It should work in all screen resolutions, with graphics cards, etc.
 It is also able to create snapshots of chunky (8 bpp pixel-packed)
-screen modes.
+screen modes.
+
 For 68000, there are 2 versions, both should be functional
 identical, the only difference being that snapit.acc was compiled
 by Pure-C. The other was compiled by GCC, but can also be
@@ -22,12 +32,18 @@ renamed as Accessory.
 The snapshots are written to the clipboard directory if that
 exists, otherwise to the current directory (which is usually the
 root directory of your boot drive when run as accessory).
-
+
+
 Known bugs:
 
 Some conversions (especially chunky format) might be quite slow.
 
 
 
-History: 2018/08/22 1.0- first version
-½ Thorsten Otto
+History:
+ 
+2018/08/22 1.0
+- first version
+
+
+½ Thorsten Otto
