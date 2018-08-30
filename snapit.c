@@ -44,7 +44,8 @@ enum filetype {
 	FT_GIF,
 	FT_TGA16,
 	FT_TGA24,
-	FT_PNG
+	FT_PNG,
+	FT_JPEG
 };
 
 extern struct converter const img_converter;
@@ -52,6 +53,7 @@ extern struct converter const gif_converter;
 extern struct converter const tga16_converter;
 extern struct converter const tga24_converter;
 extern struct converter const png_converter;
+extern struct converter const jpeg_converter;
 
 static struct {
 	const struct converter *converter;
@@ -62,7 +64,8 @@ static struct {
 	{ &gif_converter, O_GIF },
 	{ &tga16_converter, O_TGA16 },
 	{ &tga24_converter, O_TGA24 },
-	{ &png_converter, O_PNG }
+	{ &png_converter, O_PNG },
+	{ &jpeg_converter, O_JPEG }
 };
 
 /*
@@ -191,6 +194,41 @@ static _BOOL test_chunky(_WORD planes)
 		return TRUE;
 
 	return FALSE;
+}
+
+/*** ---------------------------------------------------------------------- ***/
+
+#define FO_NUM_LINES	5
+#define FO_MAX_STR_LENG	31
+
+#define endstring(a)    ((a) == ']' || (a) == '\0')
+#define endsubstring(a) ((a) == '|' || (a) == ']' || (a) == '\0')
+
+void safe_alert(const char *msg)
+{
+	char buf[(sizeof("[1][") - 1) + (FO_NUM_LINES - 1) + FO_NUM_LINES * FO_MAX_STR_LENG + (sizeof("][ Ok ]") - 1) + 1];
+	char *p;
+	int line;
+	int len;
+	
+	line = 0;
+	strcpy(buf, "[1][");
+	p = buf + sizeof("[1][") - 1;
+	while (*msg && line < FO_NUM_LINES)
+	{
+		len = 0;
+		while (*msg && len < FO_MAX_STR_LENG)
+		{
+			*p++ = *msg++;
+			len++;
+		}
+		line++;
+		if (*msg && line < FO_NUM_LINES)
+			*p++ = '|';
+	}
+	strcpy(p, "][ Ok ]");
+	graf_mouse(ARROW, NULL);
+	form_alert(1, buf);
 }
 
 /*** ---------------------------------------------------------------------- ***/
@@ -787,7 +825,10 @@ static void write_snapshot(void)
 	{
 		mem_fdb.fd_stand = 0;
 		mem_fdb.fd_nplanes = vdi_planes;
-		line_len = ulmul(mem_fdb.fd_wdwidth << 1, vdi_planes);
+		if (vdi_planes == 15)
+			line_len = ulmul(mem_fdb.fd_wdwidth << 1, 16);
+		else
+			line_len = ulmul(mem_fdb.fd_wdwidth << 1, vdi_planes);
 	}
 	snap_size = line_len * snap.g_h;
 	
@@ -950,6 +991,7 @@ static void check_filetype(OBJECT *tree, _WORD obj, GRECT *gr)
 	case O_TGA16:
 	case O_TGA24:
 	case O_PNG:
+	case O_JPEG:
 		get_filetype(tree);
 		enable_truecolor(tree, file_type);
 		force_24bit =
@@ -986,12 +1028,22 @@ static void run_snapit(void)
 	sprintf(delaystr, "%u", snap_delay);
 	select_snaptype(tree, snap_type);
 	select_filetype(tree, file_type);
-	obj = run_dialog(tree, check_filetype);
 	
-	if (obj == SNAP_HELP)
-	{
-		show_about();
-	} else if (obj == SNAP_OK)
+	do {
+		obj = run_dialog(tree, check_filetype);
+		if (obj == SNAP_HELP)
+		{
+			uncontrol();
+			evnt_timer(0);
+			control();
+			show_about();
+			uncontrol();
+			evnt_timer(0);
+			control();
+		}
+	} while (obj == SNAP_HELP);
+	
+	if (obj == SNAP_OK)
 	{
 		_WORD top;
 		_WORD button, state;
@@ -1059,6 +1111,9 @@ static void run_snapit(void)
 			wind_get_grect(top, WF_WORKXYWH, &snap);
 			break;
 		case SNAP_RUBBER:
+			uncontrol();
+			evnt_timer(0);
+			control();
 			graf_mouse(OUTLN_CROSS, NULL);
 			do
 			{

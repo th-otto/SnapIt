@@ -55,10 +55,10 @@ static long tga16_write_file(const MFDB *pic, const void *palette, void *mem)
 	linesize = ((size_t)pic->fd_wdwidth * planes) << 1;
 	
 	instart = (const unsigned char *)pic->fd_addr;
-	for (y = 0; y < pic->fd_h; y++)
+	for (y = pic->fd_h; y > 0; y--)
 	{
 		inptr = instart;
-		for (x = 0; x < pic->fd_w; x++)
+		for (x = pic->fd_w; x > 0; x--)
 		{
 			switch (pic->fd_nplanes)
 			{

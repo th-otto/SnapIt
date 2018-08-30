@@ -1,8 +1,8 @@
 c:\snapit.acc
 ;snapit.prg
 
-.C[-DZLIB_SLB=1]
-.C[-DPNGLIB_SLB=1]
+.C[-DJPEG_SLB]
+.C[-DPNGLIB_SLB]
 
 .C[-L40]
 
@@ -36,13 +36,18 @@ tga24.c
 img.c
 gif.c
 png.c
+jpeg.c
 tab.c
 cookie.c
-malloc.c
 
 zlibslb.lib
 pngslb16.lib
+jpegslb8.lib
+;jpeg8.lib
+
+malloc.c
+
 pcfltlib.lib
 pcstdlib.lib
-pcgemlib.lib
 pctoslib.lib
+pcgemlib.lib

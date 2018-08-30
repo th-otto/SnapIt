@@ -16,9 +16,10 @@ There are 3 versions available, in their corresponding subdirectories:
 v4e: for ColdFire
 
 
-For PNG output, you need to copy the shared library for your system
+For PNG & JPEG output, you need to copy the shared library for your system
 to some directory that is searched by $SLBPATH (for MiNT),
-or to C:\MINT\SLB for SingleTOS.
+or to C:\MINT\SLB for SingleTOS. The shared libraries
+are available in a separate archive.
 
 It should work in all screen resolutions, with graphics cards, etc.
 It is also able to create snapshots of chunky (8 bpp pixel-packed)
@@ -27,7 +28,7 @@ screen modes.
 For 68000, there are 2 versions, both should be functional
 identical, the only difference being that snapit.acc was compiled
 by Pure-C. The other was compiled by GCC, but can also be
-renamed as Accessory.
+renamed as accessory.
 
 The snapshots are written to the clipboard directory if that
 exists, otherwise to the current directory (which is usually the
@@ -42,6 +43,12 @@ Some conversions (especially chunky format) might be quite slow.
 
 History:
  
+2018/08/29 1.1
+- fixed a crash in 24bit targa output
+- fixed paletted png output
+- fixed 32 bit truecolor png output
+- added support for jpeg
+
 2018/08/22 1.0
 - first version
 

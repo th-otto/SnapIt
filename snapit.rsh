@@ -303,7 +303,7 @@ extern _VOID *hfix_objs(RSHDR *_hdr, OBJECT *_ob, _WORD _num_objs);
 #undef NUM_OBS
 #undef NUM_TREE
 #undef NUM_UD
-#define NUM_STRINGS 33
+#define NUM_STRINGS 34
 #define NUM_BB		0
 #define NUM_IB		0
 #define NUM_CIB     0
@@ -311,7 +311,7 @@ extern _VOID *hfix_objs(RSHDR *_hdr, OBJECT *_ob, _WORD _num_objs);
 #define NUM_TI		2
 #define NUM_FRSTR	5
 #define NUM_FRIMG	0
-#define NUM_OBS     28
+#define NUM_OBS     29
 #define NUM_TREE	2
 #define NUM_UD		0
 #endif
@@ -326,7 +326,7 @@ static char snapit_string_5[] = "Written with Pure-C";
 static char snapit_string_6[] = "& modules using GCC";
 static char snapit_string_7[] = "\275 2018 Thorsten Otto";
 static char snapit_string_8[] = "Ok";
-static char snapit_string_9[] = "Version 1.0";
+static char snapit_string_9[] = "Version 1.1";
 static char snapit_string_10[] = "Snap Area:";
 static char snapit_string_11[] = "Output:";
 static char snapit_string_12[] = "Whole screen";
@@ -338,32 +338,33 @@ static char snapit_string_17[] = "GIF";
 static char snapit_string_18[] = "TGA 16";
 static char snapit_string_19[] = "TGA 24";
 static char snapit_string_20[] = "PNG";
-static char snapit_string_21[] = "0";
-static char snapit_string_22[] = "Delay: _ second(s)";
-static char snapit_string_23[] = "9";
-static char snapit_string_24[] = "Output TrueColor";
-static char snapit_string_25[] = "Help";
-static char snapit_string_26[] = "Catch";
-static char snapit_string_27[] = "Cancel";
-static char snapit_string_28[] = "[1][Not enough memory!][Cancel]";
-static char snapit_string_29[] = "[1][Error writing file!][Cancel]";
-static char snapit_string_30[] = "Choose image filename";
-static char snapit_string_31[] = "[2][Overwrite existing file?][Yes|No]";
-static char snapit_string_32[] = "[1][Unsupported Resolution][Cancel]";
+static char snapit_string_21[] = "JPEG";
+static char snapit_string_22[] = "0";
+static char snapit_string_23[] = "Delay: _ second(s)";
+static char snapit_string_24[] = "9";
+static char snapit_string_25[] = "Output TrueColor";
+static char snapit_string_26[] = "Help";
+static char snapit_string_27[] = "Catch";
+static char snapit_string_28[] = "Cancel";
+static char snapit_string_29[] = "[1][Not enough memory!][Cancel]";
+static char snapit_string_30[] = "[1][Error writing file!][Cancel]";
+static char snapit_string_31[] = "Choose image filename";
+static char snapit_string_32[] = "[2][Overwrite existing file?][Yes|No]";
+static char snapit_string_33[] = "[1][Unsupported Resolution][Cancel]";
 
 
 static char *rs_frstr[NUM_FRSTR] = {
-	snapit_string_28,
 	snapit_string_29,
 	snapit_string_30,
 	snapit_string_31,
-	snapit_string_32
+	snapit_string_32,
+	snapit_string_33
 };
 
 
 static TEDINFO rs_tedinfo[NUM_TI] = {
 	{ snapit_string_0, snapit_string_1, snapit_string_2, IBM, 0, TE_CNTR, 0x1180, 0x0, 0, 18,1 },
-	{ snapit_string_21, snapit_string_22, snapit_string_23, IBM, 6, TE_CNTR, 0x1180, 0x0, -2, 2,19 } /* SNAP_DELAY */
+	{ snapit_string_22, snapit_string_23, snapit_string_24, IBM, 6, TE_CNTR, 0x1180, 0x0, -2, 2,19 } /* SNAP_DELAY */
 };
 
 
@@ -382,7 +383,7 @@ static OBJECT rs_object[NUM_OBS] = {
 
 /* SNAP_DIALOG */
 
-	{ -1, 1, 18, G_BOX, OF_FL3DBAK, OS_OUTLINED, C_UNION(0x21100L), 0,0, 39,12 },
+	{ -1, 1, 19, G_BOX, OF_FL3DBAK, OS_OUTLINED, C_UNION(0x21100L), 0,0, 39,12 },
 	{ 2, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_10), 1,1, 10,1 },
 	{ 3, -1, -1, G_STRING, OF_NONE, OS_NORMAL, C_UNION(snapit_string_11), 28,1, 7,1 },
 	{ 8, 4, 7, G_IBOX, OF_NONE, OS_NORMAL, C_UNION(0x1100L), 1,2, 25,5 },
@@ -390,17 +391,18 @@ static OBJECT rs_object[NUM_OBS] = {
 	{ 6, -1, -1, G_BUTTON, 0x411, 0xFC40, C_UNION(snapit_string_13), 0,1, 25,1 }, /* SNAP_TOP_CURR */
 	{ 7, -1, -1, G_BUTTON, 0x411, 0xFC40, C_UNION(snapit_string_14), 0,2, 25,1 }, /* SNAP_TOP_WORK */
 	{ 3, -1, -1, G_BUTTON, 0x411, 0xFC40, C_UNION(snapit_string_15), 0,3, 25,1 }, /* SNAP_RUBBER */
-	{ 14, 9, 13, G_IBOX, OF_NONE, OS_NORMAL, C_UNION(0x1100L), 28,2, 10,6 },
+	{ 15, 9, 14, G_IBOX, OF_NONE, OS_NORMAL, C_UNION(0x1100L), 28,2, 10,6 },
 	{ 10, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_16), 0,0, 10,1 }, /* O_IMG */
 	{ 11, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_17), 0,1, 10,1 }, /* O_GIF */
 	{ 12, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_18), 0,2, 10,1 }, /* O_TGA16 */
 	{ 13, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_19), 0,3, 10,1 }, /* O_TGA24 */
-	{ 8, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_20), 0,4, 10,1 }, /* O_PNG */
-	{ 15, -1, -1, G_FTEXT, 0x480, OS_NORMAL, C_UNION(&rs_tedinfo[1]), 1,8, 18,1 }, /* SNAP_DELAY */
-	{ 16, -1, -1, G_BUTTON, 0x441, 0xFC40, C_UNION(snapit_string_24), 21,8, 17,1 }, /* FORCE_TRUECOLOR */
-	{ 17, -1, -1, G_BUTTON, 0x605, OS_NORMAL, C_UNION(snapit_string_25), 1,10, 8,1 }, /* SNAP_HELP */
-	{ 18, -1, -1, G_BUTTON, 0x607, OS_WHITEBAK, C_UNION(snapit_string_26), 16,10, 8,1 }, /* SNAP_OK */
-	{ 0, -1, -1, G_BUTTON, 0x625, OS_WHITEBAK, C_UNION(snapit_string_27), 30,10, 8,1 } /* SNAP_CANCEL */
+	{ 14, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_20), 0,4, 10,1 }, /* O_PNG */
+	{ 8, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_21), 0,5, 10,1 }, /* O_JPEG */
+	{ 16, -1, -1, G_FTEXT, 0x480, OS_NORMAL, C_UNION(&rs_tedinfo[1]), 1,7, 18,1 }, /* SNAP_DELAY */
+	{ 17, -1, -1, G_BUTTON, 0x441, 0xFC40, C_UNION(snapit_string_25), 10,8, 17,1 }, /* FORCE_TRUECOLOR */
+	{ 18, -1, -1, G_BUTTON, 0x605, OS_NORMAL, C_UNION(snapit_string_26), 1,10, 8,1 }, /* SNAP_HELP */
+	{ 19, -1, -1, G_BUTTON, 0x607, OS_WHITEBAK, C_UNION(snapit_string_27), 16,10, 8,1 }, /* SNAP_OK */
+	{ 0, -1, -1, G_BUTTON, 0x625, OS_WHITEBAK, C_UNION(snapit_string_28), 30,10, 8,1 } /* SNAP_CANCEL */
 };
 
 
@@ -603,7 +605,7 @@ _WORD snapit_rsc_free()
 #endif /* RSC_NAMED_FUNCTIONS */
 
 #else /* !RSC_STATIC_FILE */
-int rs_numstrings = 33;
+int rs_numstrings = 34;
 int rs_numfrstr = 5;
 
 int rs_nuser = 0;
@@ -613,7 +615,7 @@ int rs_numfrimg = 0;
 int rs_numib = 0;
 int rs_numcib = 0;
 int rs_numti = 2;
-int rs_numobs = 28;
+int rs_numobs = 29;
 int rs_numtree = 2;
 
 char rs_name[] = "snapit.rsc";

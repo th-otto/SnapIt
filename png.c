@@ -5,8 +5,13 @@
 #include <string.h>
 #include <errno.h>
 #include <mint/mintbind.h>
+#ifdef PNGLIB_SLB
 #include <slb/png.h>
 #include <slb/zlib.h>
+#else
+#include <png.h>
+#include <zlib.h>
+#endif
 #include <setjmp.h>
 #include "externs.h"
 
@@ -248,8 +253,17 @@ static long png_write_file(const MFDB *pic, const void *palette, void *mem)
 		}
 	} else if (pic->fd_nplanes == 32)
 	{
-		color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+		unsigned long linebufsize;
+		
+		color_type = PNG_COLOR_TYPE_RGB;
 		srcrowbytes = ulmul(pic->fd_wdwidth << 1, 32);
+		linebufsize = (srcrowbytes >> 1) * 3;
+		wpnginfo->rowbuf = malloc(linebufsize);
+		if (wpnginfo->rowbuf == NULL)
+		{
+			writepng_exit(wpnginfo);
+			return -ENOMEM;
+		}
 	} else
 	{
 		writepng_exit(wpnginfo);
@@ -431,8 +445,23 @@ static long png_write_file(const MFDB *pic, const void *palette, void *mem)
 					}
 					break;
 				case 24:
-				case 32:
 					png_write_row(png_ptr, image_data);
+					break;
+				case 32:
+					{
+						const unsigned char *s;
+	
+						p = wpnginfo->rowbuf;
+						s = image_data;
+						for (x = pic->fd_w; x > 0; x--)
+						{
+							s++;
+							*p++ = *s++;
+							*p++ = *s++;
+							*p++ = *s++;
+						}
+						png_write_row(png_ptr, wpnginfo->rowbuf);
+					}
 					break;
 				}
 				image_data += srcrowbytes;
@@ -458,7 +487,9 @@ static long png_estimate_size(const MFDB *pic, const void *palette)
 
 static void png_free_mem(void)
 {
+#ifdef PNGLIB_SLB
 	slb_pnglib_close();
+#endif
 }
 
 

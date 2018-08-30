@@ -97,3 +97,5 @@ struct converter {
 
 extern unsigned char const rgb5tab[32];
 extern unsigned char const rgb6tab[64];
+
+void safe_alert(const char *msg);

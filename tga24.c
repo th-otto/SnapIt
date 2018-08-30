@@ -78,7 +78,6 @@ static long tga24_write_file(const MFDB *pic, const void *palette, void *mem)
 				*outptr++ = rgb6tab[(inptr[1] >> 5) | ((inptr[0] & 0x07) << 3)];
 				*outptr++ = rgb5tab[(inptr[0] >> 3) & 0x1f];
 				inptr += 2;
-				outptr += 3;
 				break;
 			case 32:
 				inptr++;
