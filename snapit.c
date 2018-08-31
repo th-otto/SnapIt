@@ -1016,14 +1016,34 @@ static void check_filetype(OBJECT *tree, _WORD obj, GRECT *gr)
 }
 
 
+static _WORD get_prev_top(_WORD top, _BOOL maketop)
+{
+	_WORD pid, wopen, prev, next;
+	char name[128];
+	
+	for (;;)
+	{
+		prev = next = -1;
+		wind_get(top, WF_OWNER, &pid, &wopen, &prev, &next);
+		wind_get(top, WF_NAME, (_WORD *)name, 0, 0, 0);
+		if (prev <= 0)
+			break;
+		top = prev;
+	}
+	if (maketop)
+	{
+		wind_set_int(top, WF_TOP, 0);
+	}
+	return top;
+}
+
+
 static void run_snapit(void)
 {
 	OBJECT *tree = rs_trindex[SNAP_DIALOG];
 	_WORD obj;
 	char *delaystr;
-	_WORD prevtop;
 	
-	wind_get_int(DESK, WF_TOP, &prevtop);
 	delaystr = tree[SNAP_DELAY].ob_spec.tedinfo->te_ptext;
 	sprintf(delaystr, "%u", snap_delay);
 	select_snaptype(tree, snap_type);
@@ -1070,11 +1090,8 @@ static void run_snapit(void)
 			 * FIXME: does not work, either: prevtop is already 0
 			 */
 			wind_get_int(DESK, WF_TOP, &top);
-			if (top == 0 && prevtop != 0)
-			{
-				wind_set_int(prevtop, WF_TOP, 0);
-				top = prevtop;
-			}
+			if (top == DESK)
+				top = get_prev_top(top, TRUE);
 			/*
 			 * give other programs time to process WM_REDRAW
 			 * messages resulting from FMD_FINISH,
@@ -1094,11 +1111,8 @@ static void run_snapit(void)
 			 * FIXME: does not work, either: prevtop is already 0
 			 */
 			wind_get_int(DESK, WF_TOP, &top);
-			if (top == 0 && prevtop != 0)
-			{
-				wind_set_int(prevtop, WF_TOP, 0);
-				top = prevtop;
-			}
+			if (top == DESK)
+				top = get_prev_top(top, TRUE);
 			/*
 			 * give other programs time to process WM_REDRAW
 			 * messages resulting from FMD_FINISH,
