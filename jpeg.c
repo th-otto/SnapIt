@@ -295,6 +295,7 @@ static long jpeg_write_file(const MFDB *pic, const void *palette, void *mem)
 
 	/* Initialize the JPEG compression object with default error handling. */
 	cinfo->err = jpeg_std_error(&jerr.pub);
+	cinfo->client_data = NULL;
 	jerr.pub.error_exit = my_error_exit;
 	jerr.pub.output_message = my_output_message;
 	jerr.pub.trace_level = 3;

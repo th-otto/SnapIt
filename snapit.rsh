@@ -399,7 +399,7 @@ static OBJECT rs_object[NUM_OBS] = {
 	{ 14, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_20), 0,4, 10,1 }, /* O_PNG */
 	{ 8, -1, -1, G_BUTTON, 0x451, 0xFC40, C_UNION(snapit_string_21), 0,5, 10,1 }, /* O_JPEG */
 	{ 16, -1, -1, G_FTEXT, 0x480, OS_NORMAL, C_UNION(&rs_tedinfo[1]), 1,7, 18,1 }, /* SNAP_DELAY */
-	{ 17, -1, -1, G_BUTTON, 0x441, 0xFC40, C_UNION(snapit_string_25), 10,8, 17,1 }, /* FORCE_TRUECOLOR */
+	{ 17, -1, -1, G_BUTTON, 0x441, 0xFC40, C_UNION(snapit_string_25), 10,8, 19,1 }, /* FORCE_TRUECOLOR */
 	{ 18, -1, -1, G_BUTTON, 0x605, OS_NORMAL, C_UNION(snapit_string_26), 1,10, 8,1 }, /* SNAP_HELP */
 	{ 19, -1, -1, G_BUTTON, 0x607, OS_WHITEBAK, C_UNION(snapit_string_27), 16,10, 8,1 }, /* SNAP_OK */
 	{ 0, -1, -1, G_BUTTON, 0x625, OS_WHITEBAK, C_UNION(snapit_string_28), 30,10, 8,1 } /* SNAP_CANCEL */
