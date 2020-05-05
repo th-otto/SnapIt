@@ -57,3 +57,7 @@ udo_fc.*
 udo_fo.*
 *.cnt
 *.rtf
+img.s
+gif.s
+tga16.s
+tga24.s
