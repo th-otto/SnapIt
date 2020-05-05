@@ -1,5 +1,5 @@
-c:\snapit.acc
-;snapit.prg
+;c:\snapit.acc
+snapit.prg
 
 .C[-DJPEG_SLB]
 .C[-DPNGLIB_SLB]

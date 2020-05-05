@@ -605,20 +605,20 @@ _WORD snapit_rsc_free()
 #endif /* RSC_NAMED_FUNCTIONS */
 
 #else /* !RSC_STATIC_FILE */
-int rs_numstrings = 34;
-int rs_numfrstr = 5;
+_WORD rs_numstrings = 34;
+_WORD rs_numfrstr = 5;
 
-int rs_nuser = 0;
-int rs_numimages = 0;
-int rs_numbb = 0;
-int rs_numfrimg = 0;
-int rs_numib = 0;
-int rs_numcib = 0;
-int rs_numti = 2;
-int rs_numobs = 29;
-int rs_numtree = 2;
+_WORD rs_nuser = 0;
+_WORD rs_numimages = 0;
+_WORD rs_numbb = 0;
+_WORD rs_numfrimg = 0;
+_WORD rs_numib = 0;
+_WORD rs_numcib = 0;
+_WORD rs_numti = 2;
+_WORD rs_numobs = 29;
+_WORD rs_numtree = 2;
 
 char rs_name[] = "snapit.rsc";
 
-int _rsc_format = 2; /* RSC_FORM_SOURCE2 */
+_WORD _rsc_format = 2; /* RSC_FORM_SOURCE2 */
 #endif /* RSC_STATIC_FILE */
